@@ -11,4 +11,29 @@
         AND     password = PASSWORD(#{password})
         AND     is_deleted = FALSE
     </select>
+
+    <!-- 회원번호 사용 여부 확인 -->
+    <select id="isIdxUsed" resultType="boolean">
+        SELECT  IF(COUNT(*) > 0, TRUE, FALSE)
+        FROM    users
+        WHERE   idx = #{idx}
+    </select>
+
+    <!-- 회원가입 -->
+    <insert id="createUser" parameterType="com.roseno.curbcrime.domain.User">
+        INSERT INTO users(  idx,
+                            id,
+                            password,
+                            name,
+                            email,
+                            role
+        )
+        VALUES (            #{idx},
+                            #{id},
+                            PASSWORD(#{password}),
+                            #{name},
+                            #{email},
+                            'USER'
+               )
+    </insert>
 </mapper>
