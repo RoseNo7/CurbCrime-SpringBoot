@@ -57,4 +57,31 @@ public class AuthController {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+    /**
+     * 로그아웃
+     * @param session
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.POST, value = "/auth/logout")
+    public ResponseEntity<ApiResponse<Object>> logout(HttpSession session) {
+        if (SessionUtil.isLogin(session)) {
+            SessionUtil.logout(session);
+
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .build();
+
+            return ResponseEntity.ok(apiResponse);
+        } else {
+            ApiResponse<Object> responseDTO = ApiResponse.builder()
+                    .code(HttpStatus.UNAUTHORIZED.value())
+                    .status(ApiResult.ERROR.status())
+                    .message("인증되지 않은 사용자입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseDTO);
+        }
+    }
 }

@@ -27,7 +27,14 @@ public class SessionUtil {
         return getUser(session).isPresent();
     }
 
-
+    /**
+     * 세션 제거
+     * @param session
+     */
+    public static void logout(HttpSession session) {
+        session.invalidate();
+    }
+    
     /**
      * 세션에서 회원정보 조회
      * @param session
