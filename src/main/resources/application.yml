@@ -1,3 +1,8 @@
 spring:
-  application:
-    name: curbcrime
+  profiles:
+    active: share
+
+---
+spring:
+  profiles:
+    active: local
