@@ -91,4 +91,21 @@ public class SessionUtil {
     public static void setPasswordCipher(HttpSession session, String cipher) {
         setAttribute(session, SESSION_KEY_PASSWORD_CIPHER, cipher);
     }
+
+    /**
+     * 세션에서 정보 삭제
+     * @param session
+     * @param key
+     */
+    public static void removeAttribute(HttpSession session, String key) {
+        session.removeAttribute(key);
+    }
+
+    /**
+     * 세션에서 비밀번호 인증번호 삭제
+     * @param session
+     */
+    public static void removePasswordCipher(HttpSession session) {
+        removeAttribute(session, SESSION_KEY_PASSWORD_CIPHER);
+    }
 }
