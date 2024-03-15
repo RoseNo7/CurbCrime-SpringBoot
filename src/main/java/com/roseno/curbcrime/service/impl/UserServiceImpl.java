@@ -1,6 +1,8 @@
 package com.roseno.curbcrime.service.impl;
 
 import com.roseno.curbcrime.domain.User;
+import com.roseno.curbcrime.dto.user.UserFindIdRequest;
+import com.roseno.curbcrime.dto.user.UserFindIdResponse;
 import com.roseno.curbcrime.dto.user.UserJoinRequest;
 import com.roseno.curbcrime.exception.ServiceException;
 import com.roseno.curbcrime.mapper.UserMapper;
@@ -18,6 +20,36 @@ public class UserServiceImpl implements UserService {
     private static final int USER_KEY_LENGTH = 8;
 
     private final UserMapper userMapper;
+
+    /**
+     * 아이디 찾기
+     * @param userFindIdRequest     아이디 찾기 정보
+     * @return                      아이디 정보
+     */
+    @Override
+    public Optional<UserFindIdResponse> findUserId(UserFindIdRequest userFindIdRequest) {
+        String name = userFindIdRequest.getName();
+        String email = userFindIdRequest.getEmail();
+
+        try {
+            UserFindIdResponse userResponse = null;
+
+            Optional<User> optUser = userMapper.findIdByNameAndEmail(name, email);
+
+            if (optUser.isPresent()) {
+                User user = optUser.get();
+
+                userResponse = UserFindIdResponse.builder()
+                        .id(user.getId())
+                        .createAt(user.getCreateAt())
+                        .build();
+            }
+
+            return Optional.ofNullable(userResponse);
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
 
     /**
      * 아이디 사용 여부 확인

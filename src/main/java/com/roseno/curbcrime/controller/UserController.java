@@ -2,6 +2,8 @@ package com.roseno.curbcrime.controller;
 
 import com.roseno.curbcrime.dto.api.ApiResponse;
 import com.roseno.curbcrime.dto.api.ApiResult;
+import com.roseno.curbcrime.dto.user.UserFindIdRequest;
+import com.roseno.curbcrime.dto.user.UserFindIdResponse;
 import com.roseno.curbcrime.dto.user.UserJoinRequest;
 import com.roseno.curbcrime.service.UserService;
 import jakarta.validation.Valid;
@@ -72,6 +74,36 @@ public class UserController {
                     .build();
         }
         
+        return ResponseEntity.ok(apiResponse);
+    }
+    
+    /**
+     * 아이디 찾기
+     * @param userFindIdRequest     아이디 찾기 정보
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.POST, value = "/accounts/id")
+    public ResponseEntity<ApiResponse<Object>> findUserId(@RequestBody @Valid UserFindIdRequest userFindIdRequest) {
+        ApiResponse<Object> apiResponse;
+
+        Optional<UserFindIdResponse> optUser = userService.findUserId(userFindIdRequest);
+
+        if (optUser.isPresent()) {
+            UserFindIdResponse userResponse = optUser.get();
+
+            apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .data(userResponse)
+                    .build();
+        } else {
+            apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("가입하신 정보와 일치하지 않습니다. 다시 확인해주세요.")
+                    .build();
+        }
+
         return ResponseEntity.ok(apiResponse);
     }
 }
