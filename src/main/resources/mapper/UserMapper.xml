@@ -76,4 +76,13 @@
                             'USER'
                )
     </insert>
+
+    <!-- 회원정보 변경 -->
+    <update id="updateUser" parameterType="com.roseno.curbcrime.domain.User">
+        UPDATE  users
+        SET     name = #{user.name},
+                email = #{user.email}
+        WHERE   idx = #{idx}
+        AND     is_deleted = FALSE
+    </update>
 </mapper>

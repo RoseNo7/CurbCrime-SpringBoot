@@ -227,4 +227,48 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
         }
     }
+
+    /**
+     * 나의 정보 변경
+     * @param session
+     * @param userInfoRequest   회원정보
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.PATCH, value = "/my-account")
+    public ResponseEntity<ApiResponse<Object>> modifyMyInfo(HttpSession session,
+                                                            @RequestBody @Valid UserInfoRequest userInfoRequest) {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+
+        if (optIdx.isEmpty()) {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.UNAUTHORIZED.value())
+                    .status(ApiResult.ERROR.status())
+                    .message("인증되지 않은 사용자입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        }
+
+        long idx = optIdx.get();
+
+        boolean isUpdated = userService.updateUser(idx, userInfoRequest);
+
+        if (isUpdated) {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .data("회원정보가 변경되었습니다.")
+                    .build();
+
+            return ResponseEntity.ok(apiResponse);
+        } else {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.NOT_FOUND.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("회원을 찾을 수 없습니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
+        }
+    }
 }

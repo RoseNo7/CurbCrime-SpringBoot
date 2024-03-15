@@ -155,6 +155,26 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
+     * 회원정보 변경
+     * @param idx               회원번호
+     * @param userInfoRequest   회원정보
+     * @return                  회원정보 변경 여부
+     */
+    @Override
+    public boolean updateUser(long idx, UserInfoRequest userInfoRequest) {
+        User user = User.builder()
+                .name(userInfoRequest.getName())
+                .email(userInfoRequest.getEmail())
+                .build();
+
+        try {
+            return userMapper.updateUser(idx, user) > 0;
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
+
+    /**
      * 회원번호 생성
      * @return      회원번호
      */
