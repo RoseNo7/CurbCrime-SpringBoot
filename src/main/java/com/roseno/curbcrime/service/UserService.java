@@ -13,5 +13,6 @@ public interface UserService {
     Optional<Long> createUser(UserJoinRequest userJoinRequest);                                 // 회원가입
     Optional<String> createPasswordCipher(UserFindPasswordRequest userFindPasswordRequest);     // 비밀번호 인증번호 생성
 
-    boolean updateUser(long idx, UserInfoRequest userInfoRequest);             // 회원정보 변경
+    boolean updateUser(long idx, UserInfoRequest userInfoRequest);              // 회원정보 변경
+    boolean updatePassword(long idx, UserPasswordRequest userPasswordRequest);  // 비밀번호 변경
 }

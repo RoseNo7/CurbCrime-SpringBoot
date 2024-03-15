@@ -192,6 +192,23 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
+     * 비밀번호 변경
+     * @param idx                   회원번호
+     * @param userPasswordRequest   비밀번호
+     * @return                      비밀번호 변경 여부
+     */
+    @Override
+    public boolean updatePassword(long idx, UserPasswordRequest userPasswordRequest) {
+        String password = userPasswordRequest.getPassword();
+
+        try {
+            return userMapper.updatePassword(idx, password) > 0;
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
+
+    /**
      * 회원번호 생성
      * @return      회원번호
      */

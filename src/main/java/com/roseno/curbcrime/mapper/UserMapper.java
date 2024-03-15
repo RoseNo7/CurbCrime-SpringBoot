@@ -17,5 +17,6 @@ public interface UserMapper {
 
     int createUser(User user);              // 회원가입
 
-    int updateUser(long idx, User user);    // 회원정보 변경
+    int updateUser(long idx, User user);                // 회원정보 변경
+    int updatePassword(long idx, String password);      // 비밀번호 변경
 }
