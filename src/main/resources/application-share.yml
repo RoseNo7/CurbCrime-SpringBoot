@@ -2,10 +2,19 @@ spring:
   application:
     name: curbcrime
   datasource:
-    driver-class-name: {your database driver}
-    url: {your database url}
-    username: {your database username}
-    password: {your database password}
+    driver-class-name: { your database driver }
+    url: { your database url }
+    username: { your database username }
+    password: { your database password }
+  mail:
+    host: { your email host }
+    port: { your email port }
+    username: { your email }
+    password: { your email password }
+    properties:
+      "mail.smtp.ssl.enable": true
+      "mail.smtp.auth": true
+      "mail.smtp.starttls": true
 
 mybatis:
   mapper-locations: classpath*:/mapper/*.xml
