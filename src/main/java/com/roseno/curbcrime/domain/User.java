@@ -10,14 +10,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @ToString
 public class User {
-    long idx;
-    String id;
-    String password;
-    String name;
-    String email;
-    String role;
-    LocalDateTime createAt;
-    LocalDateTime updateAt;
-    boolean isDeleted;
-    LocalDateTime deleteAt;
+    private long idx;
+    private String id;
+    private String password;
+    private String name;
+    private String email;
+    private String role;
+    private LocalDateTime createAt;
+    private LocalDateTime updateAt;
+    private boolean isDeleted;
+    private LocalDateTime deleteAt;
 }

@@ -9,10 +9,8 @@ import java.time.LocalDateTime;
  */
 @Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @ToString
 public class UserFindIdResponse {
-    String id;
-    LocalDateTime createAt;
+    private String id;
+    private LocalDateTime createAt;
 }

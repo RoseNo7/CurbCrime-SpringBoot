@@ -11,8 +11,8 @@ import lombok.*;
 @ToString
 public class AuthRequest {
     @NotBlank
-    String id;
+    private String id;
 
     @NotBlank
-    String password;
+    private String password;
 }

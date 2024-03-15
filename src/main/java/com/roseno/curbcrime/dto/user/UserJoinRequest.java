@@ -7,8 +7,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
+/**
+ * 회원가입
+ */
 @Getter
-@Builder
 @ToString
 public class UserJoinRequest {
     @NotBlank
