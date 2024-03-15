@@ -4,14 +4,17 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * 회원정보
+ */
 @Getter
 @Builder
 @ToString
 public class UserInfoResponse {
-    long idx;
-    String id;
-    String name;
-    String email;
-    String role;
-    LocalDateTime createAt;
+    private long idx;
+    private String id;
+    private String name;
+    private String email;
+    private String role;
+    private LocalDateTime createAt;
 }

@@ -204,7 +204,6 @@ public class UserController {
         }
 
         long idx = optIdx.get();
-
         Optional<UserInfoResponse> optUser = userService.findUser(idx);
 
         if (optUser.isPresent()) {
@@ -250,7 +249,6 @@ public class UserController {
         }
 
         long idx = optIdx.get();
-
         boolean isUpdated = userService.updateUser(idx, userInfoRequest);
 
         if (isUpdated) {

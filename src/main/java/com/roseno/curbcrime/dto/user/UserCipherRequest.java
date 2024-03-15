@@ -11,5 +11,5 @@ import lombok.ToString;
 @ToString
 public class UserCipherRequest {
     @NotBlank
-    String cipher;
+    private String cipher;
 }
