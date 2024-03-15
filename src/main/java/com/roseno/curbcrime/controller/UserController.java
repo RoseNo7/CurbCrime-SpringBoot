@@ -357,4 +357,47 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
         }
     }
+
+    /**
+     * 나의 계정 삭제
+     * @param session
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.DELETE, value="/my-account")
+    public ResponseEntity<ApiResponse<Object>> deleteMyAccount(HttpSession session) {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+
+        if (optIdx.isEmpty()) {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.UNAUTHORIZED.value())
+                    .status(ApiResult.ERROR.status())
+                    .message("인증되지 않은 사용자입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        }
+
+        long idx = optIdx.get();
+        boolean isDeleted = userService.deleteUser(idx);
+
+        if (isDeleted) {
+            SessionUtil.logout(session);
+
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .data("회원탈퇴가 완료되었습니다.")
+                    .build();
+
+            return ResponseEntity.ok(apiResponse);
+        } else {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.NOT_FOUND.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("회원을 찾을 수 없습니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
+        }
+    }
 }

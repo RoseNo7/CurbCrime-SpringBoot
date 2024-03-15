@@ -15,4 +15,6 @@ public interface UserService {
 
     boolean updateUser(long idx, UserInfoRequest userInfoRequest);              // 회원정보 변경
     boolean updatePassword(long idx, UserPasswordRequest userPasswordRequest);  // 비밀번호 변경
+    
+    boolean deleteUser(long idx);           // 회원 삭제
 }

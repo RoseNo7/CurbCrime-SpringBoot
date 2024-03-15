@@ -101,4 +101,13 @@
         WHERE   idx = #{idx}
         AND     is_deleted = FALSE
     </update>
+
+    <!-- 회원 삭제 -->
+    <update id="deleteUser">
+        UPDATE  users
+        SET     is_deleted = TRUE,
+                delete_at = NOW()
+        WHERE   idx = #{idx}
+        AND     is_deleted = FALSE
+    </update>
 </mapper>

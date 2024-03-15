@@ -209,6 +209,20 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
+     * 회원 삭제
+     * @param idx   회원번호
+     * @return      회원 삭제 여부
+     */
+    @Override
+    public boolean deleteUser(long idx) {
+        try {
+            return userMapper.deleteUser(idx) > 0;
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
+
+    /**
      * 회원번호 생성
      * @return      회원번호
      */
