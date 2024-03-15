@@ -3,13 +3,16 @@ package com.roseno.curbcrime.service.impl;
 import com.roseno.curbcrime.domain.User;
 import com.roseno.curbcrime.dto.user.UserFindIdRequest;
 import com.roseno.curbcrime.dto.user.UserFindIdResponse;
+import com.roseno.curbcrime.dto.user.UserFindPasswordRequest;
 import com.roseno.curbcrime.dto.user.UserJoinRequest;
 import com.roseno.curbcrime.exception.ServiceException;
 import com.roseno.curbcrime.mapper.UserMapper;
 import com.roseno.curbcrime.service.UserService;
+import com.roseno.curbcrime.util.EmailSender;
 import com.roseno.curbcrime.util.UniqueKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
+import org.springframework.mail.MailException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -18,8 +21,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private static final int USER_KEY_LENGTH = 8;
+    private static final int USER_CIPHER_LENGTH = 6;
 
     private final UserMapper userMapper;
+    private final EmailSender mailSender;
 
     /**
      * 아이디 찾기
@@ -84,6 +89,38 @@ public class UserServiceImpl implements UserService {
             int result = userMapper.createUser(user);
 
             return (result > 0) ? Optional.of(user.getIdx()) : Optional.empty();
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
+
+    /**
+     * 비밀번호 인증번호 생성
+     * @param userFindPasswordRequest   비밀번호 찾기 정보
+     * @return
+     */
+    @Override
+    public Optional<String> createPasswordCipher(UserFindPasswordRequest userFindPasswordRequest) {
+        String id = userFindPasswordRequest.getId();
+        String email = userFindPasswordRequest.getEmail();
+
+        try {
+            String cipher = null;
+
+            Optional<User> optUser = userMapper.findUserByIdAndEmail(id, email);
+
+            if (optUser.isPresent()) {
+                cipher = UniqueKeyGenerator.generate(USER_CIPHER_LENGTH);
+
+                String subject = "[CurbCrime] 비밀번호 찾기 시, 사용되는 인증번호 발송 이메일입니다.";
+                String content = "인증번호는 " + cipher + " 입니다.";
+
+                mailSender.send(email, subject, content);
+            }
+
+            return Optional.ofNullable(cipher);
+        } catch (MailException e) {
+            throw new ServiceException("이메일 전송 실패에 하였습니다.나중에 다시 시도해주세요.");
         } catch (DataAccessException e) {
             throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
         }

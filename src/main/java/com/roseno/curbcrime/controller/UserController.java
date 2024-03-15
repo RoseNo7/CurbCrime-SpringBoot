@@ -4,8 +4,11 @@ import com.roseno.curbcrime.dto.api.ApiResponse;
 import com.roseno.curbcrime.dto.api.ApiResult;
 import com.roseno.curbcrime.dto.user.UserFindIdRequest;
 import com.roseno.curbcrime.dto.user.UserFindIdResponse;
+import com.roseno.curbcrime.dto.user.UserFindPasswordRequest;
 import com.roseno.curbcrime.dto.user.UserJoinRequest;
 import com.roseno.curbcrime.service.UserService;
+import com.roseno.curbcrime.util.SessionUtil;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -101,6 +104,40 @@ public class UserController {
                     .code(HttpStatus.OK.value())
                     .status(ApiResult.FAILED.status())
                     .message("가입하신 정보와 일치하지 않습니다. 다시 확인해주세요.")
+                    .build();
+        }
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    /**
+     * 비밀번호 찾기 인증번호 발급
+     * @param session
+     * @param userFindPasswordRequest       비밀번호 찾기 정보
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.POST, value = "/accounts/password/create")
+    public ResponseEntity<ApiResponse<Object>> createPasswordCipher(HttpSession session,
+                                                                    @RequestBody @Valid UserFindPasswordRequest userFindPasswordRequest) {
+        ApiResponse<Object> apiResponse;
+
+        Optional<String> optCipher = userService.createPasswordCipher(userFindPasswordRequest);
+
+        if (optCipher.isPresent()) {
+            String cipher = optCipher.get();
+
+            SessionUtil.setPasswordCipher(session, cipher);
+
+            apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .message("인증번호가 발급되었습니다.")
+                    .build();
+        } else {
+            apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("인증번호 발급에 실패하였습니다.")
                     .build();
         }
 
