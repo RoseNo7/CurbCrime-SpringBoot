@@ -59,6 +59,14 @@
         WHERE   id = #{id}
     </select>
 
+    <!-- 현재 비밀번호 확인 -->
+    <select id="isUsedPassword" resultType="boolean">
+        SELECT  IF(COUNT(*) > 0, TRUE, FALSE)
+        FROM    users
+        WHERE   idx = #{idx}
+        AND     password = PASSWORD(#{password})
+    </select>
+
     <!-- 회원가입 -->
     <insert id="createUser" parameterType="com.roseno.curbcrime.domain.User">
         INSERT INTO users(  idx,

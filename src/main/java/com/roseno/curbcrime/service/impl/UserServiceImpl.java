@@ -99,6 +99,23 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
+     * 현재 비밀번호 확인
+     * @param idx                   회원번호
+     * @param userPasswordRequest   비밀번호
+     * @return                      비밀번호 일치 여부
+     */
+    @Override
+    public boolean isUsedPassword(long idx, UserPasswordRequest userPasswordRequest) {
+         String password = userPasswordRequest.getPassword();
+
+         try {
+             return userMapper.isUsedPassword(idx, password);
+         } catch (DataAccessException e) {
+             throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+         }
+    }
+
+    /**
      * 회원가입
      * @param userJoinRequest   회원정보
      * @return                  회원가입 여부

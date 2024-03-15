@@ -271,4 +271,47 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
         }
     }
+
+    /**
+     * 나의 비밀번호 확인
+     * @param session
+     * @param userPasswordRequest   비밀번호
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.POST, value = "/my-account/password")
+    public ResponseEntity<ApiResponse<Object>> isUsedPassword(HttpSession session,
+                                                              @RequestBody UserPasswordRequest userPasswordRequest) {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+
+        if (optIdx.isEmpty()) {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.UNAUTHORIZED.value())
+                    .status(ApiResult.ERROR.status())
+                    .message("인증되지 않은 사용자입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        }
+
+        ApiResponse<Object> apiResponse;
+
+        long idx = optIdx.get();
+        boolean isUsed = userService.isUsedPassword(idx, userPasswordRequest);
+
+        if (isUsed) {
+            apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .data("현재 사용중인 비밀번호입니다.")
+                    .build();
+        } else {
+            apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("사용중인 비밀번호가 아닙니다.")
+                    .build();
+        }
+
+        return ResponseEntity.ok(apiResponse);
+    }
 }
