@@ -183,4 +183,48 @@ public class UserController {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+    /**
+     * 나의 정보 조회
+     * @param session
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.GET, value = "/my-account")
+    public ResponseEntity<ApiResponse<Object>> getMyInfo(HttpSession session) {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+
+        if (optIdx.isEmpty()) {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.UNAUTHORIZED.value())
+                    .status(ApiResult.ERROR.status())
+                    .message("인증되지 않은 사용자입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        }
+
+        long idx = optIdx.get();
+
+        Optional<UserInfoResponse> optUser = userService.findUser(idx);
+
+        if (optUser.isPresent()) {
+            UserInfoResponse userResponse = optUser.get();
+
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .data(userResponse)
+                    .build();
+
+            return ResponseEntity.ok(apiResponse);
+        } else {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.NOT_FOUND.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("회원을 찾을 수 없습니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
+        }
+    }
 }

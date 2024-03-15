@@ -7,6 +7,7 @@ import java.util.Optional;
 
 @Mapper
 public interface UserMapper {
+    Optional<User> findUserByIdx(long idx);                                     // 회원정보 조회
     Optional<User> findUserByIdAndPassword(String id, String password);         // 회원정보 조회 (로그인 시 사용)
     Optional<User> findUserByIdAndEmail(String id, String email);               // 회원정보 조회 (비밀번호 찾기 시 사용)
     Optional<User> findIdByNameAndEmail(String name, String email);             // 아이디 찾기

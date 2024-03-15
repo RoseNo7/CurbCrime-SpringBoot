@@ -3,6 +3,19 @@
 
 <mapper namespace="com.roseno.curbcrime.mapper.UserMapper">
 
+    <!-- 회원정보 조회 -->
+    <select id="findUserByIdx" resultType="com.roseno.curbcrime.domain.User">
+        SELECT  idx,
+                id,
+                name,
+                email,
+                role,
+                create_at
+        FROM    users
+        WHERE   idx = #{idx}
+        AND     is_deleted = FALSE
+    </select>
+
     <!-- 회원정보 조회 (로그인 시 사용) -->
     <select id="findUserByIdAndPassword" resultType="com.roseno.curbcrime.domain.User">
         SELECT  *

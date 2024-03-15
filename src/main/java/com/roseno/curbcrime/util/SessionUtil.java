@@ -56,6 +56,23 @@ public class SessionUtil {
     }
 
     /**
+     * 현재 사용자의 회원번호르 조회
+     * @param session
+     * @return
+     */
+    public static Optional<Long> getCurrentUserIdx(HttpSession session) {
+        Optional<User> optUser = getUser(session);
+
+        if (optUser.isPresent()) {
+            User user = optUser.get();
+
+            return Optional.of(user.getIdx());
+        }
+
+        return Optional.empty();
+    }
+
+    /**
      * 세션에서 비밀번호 인증번호 조회
      * @param session
      * @return          비밀번호 인증번호

@@ -1,10 +1,7 @@
 package com.roseno.curbcrime.service.impl;
 
 import com.roseno.curbcrime.domain.User;
-import com.roseno.curbcrime.dto.user.UserFindIdRequest;
-import com.roseno.curbcrime.dto.user.UserFindIdResponse;
-import com.roseno.curbcrime.dto.user.UserFindPasswordRequest;
-import com.roseno.curbcrime.dto.user.UserJoinRequest;
+import com.roseno.curbcrime.dto.user.*;
 import com.roseno.curbcrime.exception.ServiceException;
 import com.roseno.curbcrime.mapper.UserMapper;
 import com.roseno.curbcrime.service.UserService;
@@ -25,6 +22,37 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
     private final EmailSender mailSender;
+
+    /**
+     * 회원정보 조회
+     * @param idx   회원번호
+     * @return      회원정보
+     */
+    @Override
+    public Optional<UserInfoResponse> findUser(long idx) {
+        try {
+            UserInfoResponse userResponse = null;
+
+            Optional<User> optUser = userMapper.findUserByIdx(idx);
+
+            if (optUser.isPresent()) {
+                User user = optUser.get();
+
+                userResponse = UserInfoResponse.builder()
+                        .idx(user.getIdx())
+                        .id(user.getId())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .createAt(user.getCreateAt())
+                        .build();
+            }
+
+            return Optional.ofNullable(userResponse);
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
 
     /**
      * 아이디 찾기
