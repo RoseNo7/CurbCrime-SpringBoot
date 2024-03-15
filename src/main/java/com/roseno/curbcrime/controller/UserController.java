@@ -8,10 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
@@ -47,6 +44,34 @@ public class UserController {
                     .build();
         }
 
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    /**
+     * 아이디 중복 확인
+     * @param id    아이디
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.GET, value = "/accounts/{id}/exists")
+    public ResponseEntity<ApiResponse<Object>> isUsedId (@PathVariable String id) {
+        ApiResponse<Object> apiResponse;
+
+        boolean isUsed = userService.isUsedId(id);
+
+        if (!isUsed) {
+            apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .message("사용 가능한 아이디입니다.")
+                    .build();
+        } else {
+            apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("이미 사용중인 아이디입니다.")
+                    .build();
+        }
+        
         return ResponseEntity.ok(apiResponse);
     }
 }

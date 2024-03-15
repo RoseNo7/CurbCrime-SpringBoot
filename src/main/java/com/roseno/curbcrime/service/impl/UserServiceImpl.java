@@ -20,6 +20,20 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
 
     /**
+     * 아이디 사용 여부 확인
+     * @param id    아이디
+     * @return      아이디 사용 여부
+     */
+    @Override
+    public boolean isUsedId(String id) {
+        try {
+            return userMapper.isUsedId(id);
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
+
+    /**
      * 회원가입
      * @param userJoinRequest   회원정보
      * @return                  회원가입 여부
@@ -52,7 +66,7 @@ public class UserServiceImpl implements UserService {
 
         do {
             id = UniqueKeyGenerator.generateNumeric(USER_KEY_LENGTH);
-        } while(userMapper.isIdxUsed(id));
+        } while(userMapper.isUsedIdx(id));
 
         return id;
     }
