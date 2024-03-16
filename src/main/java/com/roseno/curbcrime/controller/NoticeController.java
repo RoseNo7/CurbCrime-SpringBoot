@@ -140,7 +140,7 @@ public class NoticeController {
          } else {
              ApiResponse<Object> apiResponse = ApiResponse.builder()
                      .code(HttpStatus.OK.value())
-                     .status(ApiResult.SUCCESS.status())
+                     .status(ApiResult.FAILED.status())
                      .message("공지사항 생성에 실패하였습니다.")
                      .build();
 
