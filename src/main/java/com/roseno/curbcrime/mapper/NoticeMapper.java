@@ -16,6 +16,7 @@ public interface NoticeMapper {
     int createNotice(Notice notice);                            // 공지사항 생성
 
     int updateNotice(long id, Notice notice);                   // 공지사항 수정
+    int incrementNoticeView(long id);                           // 공지사항 조회수 증가
 
     int deleteNotice(long id);                                  // 공지사항 삭제
 }

@@ -265,4 +265,31 @@ public class NoticeController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
         }
     }
+
+    /**
+     * 공지사항 조회수 증가
+     * @param id        공지사항 아이디
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.POST, value = "/{id}/views")
+    public ResponseEntity<ApiResponse<Object>> incrementNoticeViews(@PathVariable long id) {
+        boolean isIncreased = noticeService.incrementNoticeView(id);
+
+        if (isIncreased) {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .build();
+
+            return ResponseEntity.ok(apiResponse);
+        } else {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.NOT_FOUND.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("공지사항을 찾을 수 없습니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
+        }
+    }
 }

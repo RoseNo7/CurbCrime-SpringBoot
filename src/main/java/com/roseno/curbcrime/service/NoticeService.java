@@ -17,6 +17,7 @@ public interface NoticeService {
     Optional<Long> createNotice(long idx, NoticeRequest noticeRequest);         // 공지사항 생성
 
     boolean updateNotice(long id, NoticeRequest noticeRequest);                 // 공지사항 수정
+    boolean incrementNoticeView(long id);                                       // 공지사항 조회수 증가
 
     boolean deleteNotice(long id);              // 공지사항 삭제
 }

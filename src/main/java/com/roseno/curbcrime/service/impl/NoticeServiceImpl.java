@@ -150,6 +150,20 @@ public class NoticeServiceImpl implements NoticeService {
     }
 
     /**
+     * 공지사항 조회수 증가
+     * @param id        공지사항 아이디
+     * @return          공지사항 조회수 증가 여부
+     */
+    @Override
+    public boolean incrementNoticeView(long id) {
+        try {
+            return noticeMapper.incrementNoticeView(id) > 0;
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
+
+    /**
      * 공지사항 삭제
      * @param id    공지사항 아이디
      * @return      공지사항 삭제 여부
