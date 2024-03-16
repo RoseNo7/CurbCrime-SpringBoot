@@ -92,4 +92,25 @@
         WHERE           N.id = #{id}
         AND             N.is_deleted = FALSE
     </select>
+
+    <!-- 아이디 사용 여부 확인 -->
+    <select id="isUsedId" resultType="boolean">
+        SELECT  IF(COUNT(*) > 0, TRUE, FALSE)
+        FROM    notices
+        WHERE   id = #{id}
+    </select>
+
+    <!-- 공지사항 생성 -->
+    <insert id="createNotice" parameterType="com.roseno.curbcrime.domain.Notice">
+        INSERT INTO notices(    id,
+                                user_idx,
+                                title,
+                                content
+        )
+        VALUES (    #{id},
+                    #{userIdx},
+                    #{title},
+                    #{content}
+        )
+    </insert>
 </mapper>

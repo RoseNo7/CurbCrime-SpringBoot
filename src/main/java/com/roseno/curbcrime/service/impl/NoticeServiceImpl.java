@@ -1,13 +1,11 @@
 package com.roseno.curbcrime.service.impl;
 
 import com.roseno.curbcrime.domain.Notice;
-import com.roseno.curbcrime.dto.notice.NoticeResponse;
-import com.roseno.curbcrime.dto.notice.NoticesResponse;
-import com.roseno.curbcrime.dto.notice.PageResponse;
-import com.roseno.curbcrime.dto.notice.UserResponse;
+import com.roseno.curbcrime.dto.notice.*;
 import com.roseno.curbcrime.exception.ServiceException;
 import com.roseno.curbcrime.mapper.NoticeMapper;
 import com.roseno.curbcrime.service.NoticeService;
+import com.roseno.curbcrime.util.UniqueKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -18,6 +16,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class NoticeServiceImpl implements NoticeService {
+    private static final int NOTICE_ID_LENGTH = 8;
 
     private final NoticeMapper noticeMapper;
 
@@ -107,6 +106,29 @@ public class NoticeServiceImpl implements NoticeService {
     }
 
     /**
+     * 공지사항 생성
+     * @param userIdx           회원번호
+     * @param noticeRequest     공지사항
+     */
+    @Override
+    public Optional<Long> createNotice(long userIdx, NoticeRequest noticeRequest) {
+        Notice notice = Notice.builder()
+                .id(generateNoticeId())
+                .userIdx(userIdx)
+                .title(noticeRequest.getTitle())
+                .content(noticeRequest.getContent())
+                .build();
+
+        try {
+            int result = noticeMapper.createNotice(notice);
+
+            return (result > 0) ? Optional.of(notice.getId()) : Optional.empty();
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
+
+    /**
      * 정렬 옵션을 컬럼으로 변경
      * @param sortOption    정렬 옵션
      * @return              정렬 컬럼
@@ -117,5 +139,19 @@ public class NoticeServiceImpl implements NoticeService {
             case SORT_OPTION_VIEW -> "view_count DESC, create_at DESC";
             default -> "create_at DESC";
         };
+    }
+
+    /**
+     * 공지사항 아이디 생성
+     * @return      공지사항 아이디
+     */
+    public long generateNoticeId() {
+        long id;
+
+        do {
+            id = UniqueKeyGenerator.generateNumeric(NOTICE_ID_LENGTH);
+        } while(noticeMapper.isUsedId(id));
+
+        return id;
     }
 }

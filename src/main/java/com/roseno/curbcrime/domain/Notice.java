@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @ToString
 public class Notice {
     private long id;
+    private long userIdx;
     private String title;
     private String content;
     private int viewCount;

@@ -11,4 +11,7 @@ public interface NoticeMapper {
     int findNoticeCount(String searchOption, String keyword);                                                   // 공지사항 목록 개수 조회
     List<Notice> findNotices(int offset, int limit, String sortOption, String searchOption, String keyword);    // 공지사항 목록 조회
     Optional<Notice> findNoticeById(long id);                                                                   // 공지사항 조회
+    boolean isUsedId(long id);                                                                                  // 아이디 사용 여부 확인
+    
+    int createNotice(Notice notice);                            // 공지사항 생성
 }
