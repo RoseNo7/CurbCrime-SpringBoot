@@ -109,6 +109,7 @@ public class NoticeServiceImpl implements NoticeService {
      * 공지사항 생성
      * @param userIdx           회원번호
      * @param noticeRequest     공지사항
+     * @return                  공지사항 아이디
      */
     @Override
     public Optional<Long> createNotice(long userIdx, NoticeRequest noticeRequest) {
@@ -123,6 +124,26 @@ public class NoticeServiceImpl implements NoticeService {
             int result = noticeMapper.createNotice(notice);
 
             return (result > 0) ? Optional.of(notice.getId()) : Optional.empty();
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
+
+    /**
+     * 공지사항 수정
+     * @param id                공지사항 아이디
+     * @param noticeRequest     공지사항
+     * @return                  공지사항 수정 여부
+     */
+    @Override
+    public boolean updateNotice(long id, NoticeRequest noticeRequest) {
+        Notice notice = Notice.builder()
+                .title(noticeRequest.getTitle())
+                .content(noticeRequest.getContent())
+                .build();
+
+        try {
+            return noticeMapper.updateNotice(id, notice) > 0;
         } catch (DataAccessException e) {
             throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
         }

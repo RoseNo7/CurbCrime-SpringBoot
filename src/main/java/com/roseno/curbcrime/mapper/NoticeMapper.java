@@ -14,4 +14,6 @@ public interface NoticeMapper {
     boolean isUsedId(long id);                                                                                  // 아이디 사용 여부 확인
     
     int createNotice(Notice notice);                            // 공지사항 생성
+
+    int updateNotice(long id, Notice notice);                   // 공지사항 수정
 }

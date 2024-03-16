@@ -15,4 +15,6 @@ public interface NoticeService {
     Optional<NoticeResponse> findNotice(long id);                                                               // 공지사항 조회
 
     Optional<Long> createNotice(long idx, NoticeRequest noticeRequest);         // 공지사항 생성
+
+    boolean updateNotice(long id, NoticeRequest noticeRequest);                 // 공지사항 수정
 }

@@ -113,4 +113,13 @@
                     #{content}
         )
     </insert>
+
+    <!-- 공지사항 수정 -->
+    <update id="updateNotice" parameterType="com.roseno.curbcrime.domain.Notice">
+        UPDATE  notices
+        SET     title = #{notice.title},
+                content = #{notice.content}
+        WHERE   id = #{id}
+        AND     is_deleted = FALSE
+    </update>
 </mapper>
