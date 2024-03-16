@@ -193,7 +193,65 @@ public class NoticeController {
             ApiResponse<Object> apiResponse = ApiResponse.builder()
                     .code(HttpStatus.OK.value())
                     .status(ApiResult.SUCCESS.status())
-                    .data("공지사항이 변경되었습니다.")
+                    .message("공지사항이 변경되었습니다.")
+                    .build();
+
+            return ResponseEntity.ok(apiResponse);
+        } else {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.NOT_FOUND.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("공지사항을 찾을 수 없습니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
+        }
+    }
+
+    /**
+     * 공지사항 삭제
+     * @param session
+     * @param id        공지사항 아이디
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.DELETE, value = "/{id}")
+    public ResponseEntity<ApiResponse<Object>> removeNotice(HttpSession session,
+                                                            @PathVariable long id) {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+
+        if (optIdx.isEmpty()) {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.UNAUTHORIZED.value())
+                    .status(ApiResult.ERROR.status())
+                    .message("인증되지 않은 사용자입니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        }
+
+        Optional<String> optRole = SessionUtil.getCurrentUserRole(session);
+
+        if (optRole.isPresent()) {
+            String role = optRole.get();
+
+            if (!Role.ADMIN.id().equals(role)) {
+                ApiResponse<Object> apiResponse = ApiResponse.builder()
+                        .code(HttpStatus.FORBIDDEN.value())
+                        .status(ApiResult.ERROR.status())
+                        .message("요청된 작업에 필요한 권한이 없습니다.")
+                        .build();
+
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponse);
+            }
+        }
+
+        boolean isDeleted = noticeService.deleteNotice(id);
+
+        if (isDeleted) {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .message("공지사항이 삭제되었습니다.")
                     .build();
 
             return ResponseEntity.ok(apiResponse);

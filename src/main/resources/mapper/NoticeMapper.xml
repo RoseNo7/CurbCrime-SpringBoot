@@ -122,4 +122,13 @@
         WHERE   id = #{id}
         AND     is_deleted = FALSE
     </update>
+
+    <!-- 공지사항 삭제 -->
+    <update id="deleteNotice">
+        UPDATE  notices
+        SET     is_deleted = TRUE,
+                delete_at = NOW()
+        WHERE   id = #{id}
+        AND     is_deleted = FALSE
+    </update>
 </mapper>
