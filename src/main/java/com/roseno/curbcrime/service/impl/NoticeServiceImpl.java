@@ -1,6 +1,7 @@
 package com.roseno.curbcrime.service.impl;
 
 import com.roseno.curbcrime.domain.Notice;
+import com.roseno.curbcrime.dto.notice.NoticeResponse;
 import com.roseno.curbcrime.dto.notice.NoticesResponse;
 import com.roseno.curbcrime.dto.notice.PageResponse;
 import com.roseno.curbcrime.dto.notice.UserResponse;
@@ -12,6 +13,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -63,6 +65,42 @@ public class NoticeServiceImpl implements NoticeService {
                     .notices(noticesResponses)
                     .build();
 
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+    }
+
+    /**
+     * 공지사항 조회
+     * @param id    공지사항 아이디
+     * @return      공지사항
+     */
+    @Override
+    public Optional<NoticeResponse> findNotice(long id) {
+        try {
+            NoticeResponse noticeResponse = null;
+
+            Optional<Notice> optNotice = noticeMapper.findNoticeById(id);
+
+            if (optNotice.isPresent()) {
+                Notice notice = optNotice.get();
+
+                noticeResponse = NoticeResponse.builder()
+                        .id(notice.getId())
+                        .title(notice.getTitle())
+                        .content(notice.getContent())
+                        .createAt(notice.getCreateAt())
+                        .updateAt(notice.getUpdateAt())
+                        .user(UserResponse.builder()
+                                .idx(notice.getUser().getIdx())
+                                .id(notice.getUser().getId())
+                                .role(notice.getUser().getRole())
+                                .build()
+                        )
+                        .build();
+            }
+
+            return Optional.ofNullable(noticeResponse);
         } catch (DataAccessException e) {
             throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
         }

@@ -74,4 +74,22 @@
         LIMIT           #{limit}
         OFFSET          #{offset}
     </select>
+
+    <!-- 공지사항 조회 -->
+    <select id="findNoticeById" resultMap="notice">
+        SELECT          N.id,
+                        N.title,
+                        N.content,
+                        N.view_count,
+                        N.create_at,
+                        N.update_at,
+                        U.idx AS user_idx,
+                        U.id AS user_id,
+                        U.role AS user_role
+        FROM            notices N
+        INNER JOIN      users U
+        ON              N.user_idx = U.idx
+        WHERE           N.id = #{id}
+        AND             N.is_deleted = FALSE
+    </select>
 </mapper>

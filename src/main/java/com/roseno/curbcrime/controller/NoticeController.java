@@ -2,15 +2,15 @@ package com.roseno.curbcrime.controller;
 
 import com.roseno.curbcrime.dto.api.ApiResponse;
 import com.roseno.curbcrime.dto.api.ApiResult;
+import com.roseno.curbcrime.dto.notice.NoticeResponse;
 import com.roseno.curbcrime.dto.notice.PageResponse;
 import com.roseno.curbcrime.service.NoticeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/notices")
@@ -43,5 +43,35 @@ public class NoticeController {
                 .build();
 
         return ResponseEntity.ok(apiResponse);
+    }
+
+    /**
+     * 공지사항 조회
+     * @param id    공지사항 아이디
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.GET, value = "/{id}")
+    public ResponseEntity<ApiResponse<Object>> getNotice(@PathVariable long id) {
+        Optional<NoticeResponse> optNotice = noticeService.findNotice(id);
+
+        if (optNotice.isPresent()) {
+            NoticeResponse noticeResponse = optNotice.get();
+
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .data(noticeResponse)
+                    .build();
+
+            return ResponseEntity.ok().body(apiResponse);
+        } else {
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.NOT_FOUND.value())
+                    .status(ApiResult.FAILED.status())
+                    .message("공지사항을 조회할 수 없습니다.")
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
+        }
     }
 }
