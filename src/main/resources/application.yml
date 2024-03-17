@@ -1,0 +1,8 @@
+spring:
+  profiles:
+    active: share
+
+---
+spring:
+  profiles:
+    active: local

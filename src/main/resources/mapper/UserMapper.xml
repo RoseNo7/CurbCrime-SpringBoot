@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "//mybatis.org/DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.roseno.curbcrime.mapper.UserMapper">
+
+    <!-- 회원정보 조회 -->
+    <select id="findUserByIdx" resultType="com.roseno.curbcrime.domain.User">
+        SELECT  idx,
+                id,
+                name,
+                email,
+                role,
+                create_at
+        FROM    users
+        WHERE   idx = #{idx}
+        AND     is_deleted = FALSE
+    </select>
+
+    <!-- 회원정보 조회 (로그인 시 사용) -->
+    <select id="findUserByIdAndPassword" resultType="com.roseno.curbcrime.domain.User">
+        SELECT  *
+        FROM    users
+        WHERE   id = #{id}
+        AND     password = PASSWORD(#{password})
+        AND     is_deleted = FALSE
+    </select>
+
+    <!-- 회원정보 조회 (비밀번호 찾기 시 사용) -->
+    <select id="findUserByIdAndEmail" resultType="com.roseno.curbcrime.domain.User">
+        SELECT  name,
+                email
+        FROM    users
+        WHERE   id = #{id}
+        AND     email = #{email}
+        AND     is_deleted = FALSE
+    </select>
+
+    <!-- 아이디 찾기 -->
+    <select id="findIdByNameAndEmail" resultType="com.roseno.curbcrime.domain.User">
+        SELECT  id,
+                create_at
+        FROM    users
+        WHERE   name = #{name}
+        AND     email = #{email}
+        AND     is_deleted = FALSE
+    </select>
+
+    <!-- 회원번호 사용 여부 확인 -->
+    <select id="isUsedIdx" resultType="boolean">
+        SELECT  IF(COUNT(*) > 0, TRUE, FALSE)
+        FROM    users
+        WHERE   idx = #{idx}
+    </select>
+
+    <!-- 아이디 사용 여부 확인 -->
+    <select id="isUsedId" resultType="boolean">
+        SELECT  IF(COUNT(*) > 0, TRUE, FALSE)
+        FROM    users
+        WHERE   id = #{id}
+    </select>
+
+    <!-- 현재 비밀번호 확인 -->
+    <select id="isUsedPassword" resultType="boolean">
+        SELECT  IF(COUNT(*) > 0, TRUE, FALSE)
+        FROM    users
+        WHERE   idx = #{idx}
+        AND     password = PASSWORD(#{password})
+    </select>
+
+    <!-- 회원가입 -->
+    <insert id="createUser" parameterType="com.roseno.curbcrime.domain.User">
+        INSERT INTO users(  idx,
+                            id,
+                            password,
+                            name,
+                            email,
+                            role
+        )
+        VALUES (            #{idx},
+                            #{id},
+                            PASSWORD(#{password}),
+                            #{name},
+                            #{email},
+                            'USER'
+               )
+    </insert>
+
+    <!-- 회원정보 변경 -->
+    <update id="updateUser" parameterType="com.roseno.curbcrime.domain.User">
+        UPDATE  users
+        SET     name = #{user.name},
+                email = #{user.email}
+        WHERE   idx = #{idx}
+        AND     is_deleted = FALSE
+    </update>
+
+    <!-- 비밀번호 변경 -->
+    <update id="updatePassword">
+        UPDATE  users
+        SET     password = PASSWORD(#{password})
+        WHERE   idx = #{idx}
+        AND     is_deleted = FALSE
+    </update>
+
+    <!-- 회원 삭제 -->
+    <update id="deleteUser">
+        UPDATE  users
+        SET     is_deleted = TRUE,
+                delete_at = NOW()
+        WHERE   idx = #{idx}
+        AND     is_deleted = FALSE
+    </update>
+</mapper>
