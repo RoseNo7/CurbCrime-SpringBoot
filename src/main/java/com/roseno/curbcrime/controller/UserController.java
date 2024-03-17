@@ -255,7 +255,7 @@ public class UserController {
             ApiResponse<Object> apiResponse = ApiResponse.builder()
                     .code(HttpStatus.OK.value())
                     .status(ApiResult.SUCCESS.status())
-                    .data("회원정보가 변경되었습니다.")
+                    .message("회원정보가 변경되었습니다.")
                     .build();
 
             return ResponseEntity.ok(apiResponse);
@@ -300,7 +300,7 @@ public class UserController {
             apiResponse = ApiResponse.builder()
                     .code(HttpStatus.OK.value())
                     .status(ApiResult.SUCCESS.status())
-                    .data("현재 사용중인 비밀번호입니다.")
+                    .message("현재 사용중인 비밀번호입니다.")
                     .build();
         } else {
             apiResponse = ApiResponse.builder()
@@ -341,7 +341,7 @@ public class UserController {
             ApiResponse<Object> apiResponse = ApiResponse.builder()
                     .code(HttpStatus.OK.value())
                     .status(ApiResult.SUCCESS.status())
-                    .data("비밀번호가 변경되었습니다.")
+                    .message("비밀번호가 변경되었습니다.")
                     .build();
 
             return ResponseEntity.ok(apiResponse);
@@ -384,7 +384,7 @@ public class UserController {
             ApiResponse<Object> apiResponse = ApiResponse.builder()
                     .code(HttpStatus.OK.value())
                     .status(ApiResult.SUCCESS.status())
-                    .data("회원탈퇴가 완료되었습니다.")
+                    .message("회원탈퇴가 완료되었습니다.")
                     .build();
 
             return ResponseEntity.ok(apiResponse);
