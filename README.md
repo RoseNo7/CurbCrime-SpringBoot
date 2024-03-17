@@ -2,29 +2,17 @@
 실행하기 전, application-share.xml 를 수정해야합니다.
 ```
 # 데이터베이스 설정
-your database driver : 사용할 Database Driver를 입력해주세요.
-your database url : 사용할 Database URL를 입력해주세요.
-your database username : Database 아이디를 입력해주세요.
-your database password : Database 비밀번호를 입력해주세요.
+your database driver : 사용할 Database Driver
+your database url : 사용할 Database URL
+your database username : Database 아이디
+your database password : Database 비밀번호
 
 # 이메일 설정
-your email host : 이메일 서비스 제공업체를 입력해주세요.
-your email port : 
-your email 
-our email password
+your email host : 이메일 서비스 제공업체
+your email port : 이메일 서버 포트
+your email : 이메일
+your email password : 이메일 비밀번호
 ```
-
-  datasource:
-    driver-class-name: { your database driver }
-    url: { your database url }
-    username: { your database username }
-    password: { your database password }
-  mail:
-    host: { your email host }
-    port: { your email port }
-    username: { your email }
-    password: { your email password }
-
 
 <br><br>
 
