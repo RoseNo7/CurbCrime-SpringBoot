@@ -21,7 +21,7 @@
         SELECT  *
         FROM    users
         WHERE   id = #{id}
-        AND     password = PASSWORD(#{password})
+        AND     password = #{password}
         AND     is_deleted = FALSE
     </select>
 
@@ -45,6 +45,13 @@
         AND     is_deleted = FALSE
     </select>
 
+    <!-- 비밀번호 조회 -->
+    <select id="findPasswordByIdx">
+        SELECT  password
+        FROM    users
+        WHERE   idx = #{idx}
+    </select>
+
     <!-- 회원번호 사용 여부 확인 -->
     <select id="isUsedIdx" resultType="boolean">
         SELECT  IF(COUNT(*) > 0, TRUE, FALSE)
@@ -59,14 +66,6 @@
         WHERE   id = #{id}
     </select>
 
-    <!-- 현재 비밀번호 확인 -->
-    <select id="isUsedPassword" resultType="boolean">
-        SELECT  IF(COUNT(*) > 0, TRUE, FALSE)
-        FROM    users
-        WHERE   idx = #{idx}
-        AND     password = PASSWORD(#{password})
-    </select>
-
     <!-- 회원가입 -->
     <insert id="createUser" parameterType="com.roseno.curbcrime.domain.User">
         INSERT INTO users(  idx,
@@ -78,7 +77,7 @@
         )
         VALUES (            #{idx},
                             #{id},
-                            PASSWORD(#{password}),
+                            #{password},
                             #{name},
                             #{email},
                             'USER'
@@ -97,7 +96,7 @@
     <!-- 비밀번호 변경 -->
     <update id="updatePassword">
         UPDATE  users
-        SET     password = PASSWORD(#{password})
+        SET     password = #{password}
         WHERE   idx = #{idx}
         AND     is_deleted = FALSE
     </update>
