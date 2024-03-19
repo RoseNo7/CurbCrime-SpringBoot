@@ -5,7 +5,8 @@ import com.roseno.curbcrime.dto.api.ApiResult;
 import com.roseno.curbcrime.dto.user.*;
 import com.roseno.curbcrime.service.UserService;
 import com.roseno.curbcrime.util.SessionUtil;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -109,13 +110,11 @@ public class UserController {
 
     /**
      * 비밀번호 찾기 인증번호 발급
-     * @param session
      * @param userFindPasswordRequest       비밀번호 찾기 정보
      * @return
      */
     @RequestMapping(method = RequestMethod.POST, value = "/accounts/password/create")
-    public ResponseEntity<ApiResponse<Object>> createPasswordCipher(HttpSession session,
-                                                                    @RequestBody @Valid UserFindPasswordRequest userFindPasswordRequest) {
+    public ResponseEntity<ApiResponse<Object>> createPasswordCipher(@RequestBody @Valid UserFindPasswordRequest userFindPasswordRequest) {
         ApiResponse<Object> apiResponse;
 
         Optional<String> optCipher = userService.createPasswordCipher(userFindPasswordRequest);
@@ -123,7 +122,7 @@ public class UserController {
         if (optCipher.isPresent()) {
             String cipher = optCipher.get();
 
-            SessionUtil.setPasswordCipher(session, cipher);
+            SessionUtil.setPasswordCipher(cipher);
 
             apiResponse = ApiResponse.builder()
                     .code(HttpStatus.OK.value())
@@ -132,9 +131,9 @@ public class UserController {
                     .build();
         } else {
             apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
+                    .code(HttpStatus.NOT_FOUND.value())
                     .status(ApiResult.FAILED.status())
-                    .message("인증번호 발급에 실패하였습니다.")
+                    .message("회원을 찾을 수 없습니다.")
                     .build();
         }
 
@@ -143,23 +142,21 @@ public class UserController {
 
     /**
      * 비밀번호 변경 인증번호 확인
-     * @param session
      * @param userCipherRequest
      * @return
      */
     @RequestMapping(method = RequestMethod.POST, value = "/accounts/password/validate")
-    public ResponseEntity<ApiResponse<Object>> validatePasswordCipher(HttpSession session,
-                                                                      @RequestBody @Valid UserCipherRequest userCipherRequest) {
+    public ResponseEntity<ApiResponse<Object>> validatePasswordCipher(@RequestBody @Valid UserCipherRequest userCipherRequest) {
         ApiResponse<Object> apiResponse;
 
-        Optional<String> optCipher = SessionUtil.getPasswordCipher(session);
+        Optional<String> optCipher = SessionUtil.getPasswordCipher();
 
         if (optCipher.isPresent()) {
             String createdCipher = optCipher.get();
             String inputCipher = userCipherRequest.getCipher();
 
             if (createdCipher.equals(inputCipher)) {
-                SessionUtil.removePasswordCipher(session);
+                SessionUtil.removePasswordCipher();
 
                 apiResponse = ApiResponse.builder()
                         .code(HttpStatus.OK.value())
@@ -186,25 +183,17 @@ public class UserController {
 
     /**
      * 나의 정보 조회
-     * @param session
      * @return
      */
     @RequestMapping(method = RequestMethod.GET, value = "/my-account")
-    public ResponseEntity<ApiResponse<Object>> getMyInfo(HttpSession session) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+    public ResponseEntity<ApiResponse<Object>> getMyInfo() {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
+        Optional<UserInfoResponse> optUser = Optional.empty();
 
-        if (optIdx.isEmpty()) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .status(ApiResult.ERROR.status())
-                    .message("인증되지 않은 사용자입니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        if (optIdx.isPresent()) {
+            long idx = optIdx.get();
+            optUser = userService.findUser(idx);
         }
-
-        long idx = optIdx.get();
-        Optional<UserInfoResponse> optUser = userService.findUser(idx);
 
         if (optUser.isPresent()) {
             UserInfoResponse userResponse = optUser.get();
@@ -229,27 +218,18 @@ public class UserController {
 
     /**
      * 나의 정보 변경
-     * @param session
      * @param userInfoRequest   회원정보
      * @return
      */
     @RequestMapping(method = RequestMethod.PATCH, value = "/my-account")
-    public ResponseEntity<ApiResponse<Object>> modifyMyInfo(HttpSession session,
-                                                            @RequestBody @Valid UserInfoRequest userInfoRequest) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+    public ResponseEntity<ApiResponse<Object>> modifyMyInfo(@RequestBody @Valid UserInfoRequest userInfoRequest) {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
+        boolean isUpdated = false;
 
-        if (optIdx.isEmpty()) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .status(ApiResult.ERROR.status())
-                    .message("인증되지 않은 사용자입니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        if (optIdx.isPresent()) {
+            long idx = optIdx.get();
+            isUpdated = userService.updateUser(idx, userInfoRequest);
         }
-
-        long idx = optIdx.get();
-        boolean isUpdated = userService.updateUser(idx, userInfoRequest);
 
         if (isUpdated) {
             ApiResponse<Object> apiResponse = ApiResponse.builder()
@@ -272,29 +252,20 @@ public class UserController {
 
     /**
      * 나의 비밀번호 확인
-     * @param session
      * @param userPasswordRequest   비밀번호
      * @return
      */
     @RequestMapping(method = RequestMethod.POST, value = "/my-account/password")
-    public ResponseEntity<ApiResponse<Object>> isUsedPassword(HttpSession session,
-                                                              @RequestBody UserPasswordRequest userPasswordRequest) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+    public ResponseEntity<ApiResponse<Object>> isUsedPassword(@RequestBody UserPasswordRequest userPasswordRequest) {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
+        boolean isUsed = false;
 
-        if (optIdx.isEmpty()) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .status(ApiResult.ERROR.status())
-                    .message("인증되지 않은 사용자입니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        if (optIdx.isPresent()) {
+            long idx = optIdx.get();
+            isUsed = userService.isUsedPassword(idx, userPasswordRequest);
         }
 
         ApiResponse<Object> apiResponse;
-
-        long idx = optIdx.get();
-        boolean isUsed = userService.isUsedPassword(idx, userPasswordRequest);
 
         if (isUsed) {
             apiResponse = ApiResponse.builder()
@@ -315,27 +286,18 @@ public class UserController {
 
     /**
      * 나의 비밀번호 변경
-     * @param session
      * @param userPasswordRequest   비밀번호
      * @return
      */
     @RequestMapping(method = RequestMethod.PATCH, value = "/my-account/password")
-    public ResponseEntity<ApiResponse<Object>> updateMyPassword(HttpSession session,
-                                                                @RequestBody @Valid UserPasswordRequest userPasswordRequest) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+    public ResponseEntity<ApiResponse<Object>> updateMyPassword(@RequestBody @Valid UserPasswordRequest userPasswordRequest) {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
+        boolean isUpdated = false;
 
-        if (optIdx.isEmpty()) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .status(ApiResult.ERROR.status())
-                    .message("인증되지 않은 사용자입니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        if (optIdx.isPresent()) {
+            long idx = optIdx.get();
+            isUpdated = userService.updatePassword(idx, userPasswordRequest);
         }
-
-        long idx = optIdx.get();
-        boolean isUpdated = userService.updatePassword(idx, userPasswordRequest);
 
         if (isUpdated) {
             ApiResponse<Object> apiResponse = ApiResponse.builder()
@@ -358,28 +320,21 @@ public class UserController {
 
     /**
      * 나의 계정 삭제
-     * @param session
      * @return
      */
     @RequestMapping(method = RequestMethod.DELETE, value="/my-account")
-    public ResponseEntity<ApiResponse<Object>> deleteMyAccount(HttpSession session) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+    public ResponseEntity<ApiResponse<Object>> deleteMyAccount(HttpServletRequest request,
+                                                               HttpServletResponse response) {
+        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
+        boolean isDeleted = false;
 
-        if (optIdx.isEmpty()) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .status(ApiResult.ERROR.status())
-                    .message("인증되지 않은 사용자입니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+        if (optIdx.isPresent()) {
+            long idx = optIdx.get();
+            isDeleted = userService.deleteUser(idx);
         }
 
-        long idx = optIdx.get();
-        boolean isDeleted = userService.deleteUser(idx);
-
         if (isDeleted) {
-            SessionUtil.logout(session);
+            SessionUtil.logout(request, response);
 
             ApiResponse<Object> apiResponse = ApiResponse.builder()
                     .code(HttpStatus.OK.value())

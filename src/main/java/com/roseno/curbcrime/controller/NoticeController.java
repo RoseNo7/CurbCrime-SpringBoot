@@ -5,14 +5,13 @@ import com.roseno.curbcrime.dto.api.ApiResult;
 import com.roseno.curbcrime.dto.notice.NoticeRequest;
 import com.roseno.curbcrime.dto.notice.NoticeResponse;
 import com.roseno.curbcrime.dto.notice.PageResponse;
-import com.roseno.curbcrime.model.Role;
 import com.roseno.curbcrime.service.NoticeService;
 import com.roseno.curbcrime.util.SessionUtil;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -84,43 +83,19 @@ public class NoticeController {
 
     /**
      * 공지사항 생성
-     * @param session
      * @param noticeRequest     공지사항
      * @return
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(method = RequestMethod.POST, value = "")
-    public ResponseEntity<ApiResponse<Object>> addNotice(HttpSession session,
-                                                         @RequestBody @Valid NoticeRequest noticeRequest) {
-         Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
+    public ResponseEntity<ApiResponse<Object>> addNotice(@RequestBody @Valid NoticeRequest noticeRequest) {
+         Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
+         Optional<Long> optNoticeId = Optional.empty();
 
-         if (optIdx.isEmpty()) {
-             ApiResponse<Object> apiResponse = ApiResponse.builder()
-                     .code(HttpStatus.UNAUTHORIZED.value())
-                     .status(ApiResult.ERROR.status())
-                     .message("인증되지 않은 사용자입니다.")
-                     .build();
-
-             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+         if (optIdx.isPresent()) {
+             long idx = optIdx.get();
+             optNoticeId = noticeService.createNotice(idx, noticeRequest);
          }
-
-         Optional<String> optRole = SessionUtil.getCurrentUserRole(session);
-
-         if (optRole.isPresent()) {
-            String role = optRole.get();
-
-            if (!Role.ADMIN.id().equals(role)) {
-                ApiResponse<Object> apiResponse = ApiResponse.builder()
-                        .code(HttpStatus.FORBIDDEN.value())
-                        .status(ApiResult.ERROR.status())
-                        .message("요청된 작업에 필요한 권한이 없습니다.")
-                        .build();
-
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponse);
-            }
-         }
-
-         long idx = optIdx.get();
-         Optional<Long> optNoticeId = noticeService.createNotice(idx, noticeRequest);
 
          if (optNoticeId.isPresent()) {
              long noticeId = optNoticeId.get();
@@ -150,43 +125,14 @@ public class NoticeController {
 
     /**
      * 공지사항 수정
-     * @param session
      * @param id                공지사항 아이디
      * @param noticeRequest     공지사항
      * @return
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(method = RequestMethod.PATCH, value = "/{id}")
-    public ResponseEntity<ApiResponse<Object>> modifyNotice(HttpSession session,
-                                                            @PathVariable long id,
+    public ResponseEntity<ApiResponse<Object>> modifyNotice(@PathVariable long id,
                                                             @RequestBody @Valid NoticeRequest noticeRequest) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
-
-        if (optIdx.isEmpty()) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .status(ApiResult.ERROR.status())
-                    .message("인증되지 않은 사용자입니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
-        }
-
-        Optional<String> optRole = SessionUtil.getCurrentUserRole(session);
-
-        if (optRole.isPresent()) {
-            String role = optRole.get();
-
-            if (!Role.ADMIN.id().equals(role)) {
-                ApiResponse<Object> apiResponse = ApiResponse.builder()
-                        .code(HttpStatus.FORBIDDEN.value())
-                        .status(ApiResult.ERROR.status())
-                        .message("요청된 작업에 필요한 권한이 없습니다.")
-                        .build();
-
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponse);
-            }
-        }
-
         boolean isUpdated = noticeService.updateNotice(id, noticeRequest);
 
         if (isUpdated) {
@@ -210,41 +156,12 @@ public class NoticeController {
 
     /**
      * 공지사항 삭제
-     * @param session
      * @param id        공지사항 아이디
      * @return
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(method = RequestMethod.DELETE, value = "/{id}")
-    public ResponseEntity<ApiResponse<Object>> removeNotice(HttpSession session,
-                                                            @PathVariable long id) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx(session);
-
-        if (optIdx.isEmpty()) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .status(ApiResult.ERROR.status())
-                    .message("인증되지 않은 사용자입니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
-        }
-
-        Optional<String> optRole = SessionUtil.getCurrentUserRole(session);
-
-        if (optRole.isPresent()) {
-            String role = optRole.get();
-
-            if (!Role.ADMIN.id().equals(role)) {
-                ApiResponse<Object> apiResponse = ApiResponse.builder()
-                        .code(HttpStatus.FORBIDDEN.value())
-                        .status(ApiResult.ERROR.status())
-                        .message("요청된 작업에 필요한 권한이 없습니다.")
-                        .build();
-
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponse);
-            }
-        }
-
+    public ResponseEntity<ApiResponse<Object>> removeNotice(@PathVariable long id) {
         boolean isDeleted = noticeService.deleteNotice(id);
 
         if (isDeleted) {

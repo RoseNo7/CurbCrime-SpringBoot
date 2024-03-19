@@ -10,6 +10,7 @@ import com.roseno.curbcrime.util.UniqueKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.mail.MailException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -17,11 +18,12 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-    private static final int USER_KEY_LENGTH = 8;
+    private static final int USER_ID_LENGTH = 8;
     private static final int USER_CIPHER_LENGTH = 6;
 
     private final UserMapper userMapper;
     private final EmailSender mailSender;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 회원정보 조회
@@ -106,13 +108,20 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public boolean isUsedPassword(long idx, UserPasswordRequest userPasswordRequest) {
-         String password = userPasswordRequest.getPassword();
+        try {
+            Optional<String> optPassword = userMapper.findPasswordByIdx(idx);
 
-         try {
-             return userMapper.isUsedPassword(idx, password);
-         } catch (DataAccessException e) {
-             throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-         }
+            if (optPassword.isPresent()) {
+                String currentPassword = optPassword.get();
+                String inputPassword = userPasswordRequest.getPassword();
+
+                return passwordEncoder.matches(inputPassword, currentPassword);
+            }
+
+            return false;
+        } catch (DataAccessException e) {
+            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
     }
 
     /**
@@ -125,7 +134,7 @@ public class UserServiceImpl implements UserService {
         User user = User.builder()
                 .idx(generateUserIdx())
                 .id(userJoinRequest.getId())
-                .password(userJoinRequest.getPassword())
+                .password(passwordEncoder.encode(userJoinRequest.getPassword()))
                 .name(userJoinRequest.getName())
                 .email(userJoinRequest.getEmail())
                 .build();
@@ -199,7 +208,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public boolean updatePassword(long idx, UserPasswordRequest userPasswordRequest) {
-        String password = userPasswordRequest.getPassword();
+        String password = passwordEncoder.encode(userPasswordRequest.getPassword());
 
         try {
             return userMapper.updatePassword(idx, password) > 0;
@@ -230,7 +239,7 @@ public class UserServiceImpl implements UserService {
         long id;
 
         do {
-            id = UniqueKeyGenerator.generateNumeric(USER_KEY_LENGTH);
+            id = UniqueKeyGenerator.generateNumeric(USER_ID_LENGTH);
         } while(userMapper.isUsedIdx(id));
 
         return id;
