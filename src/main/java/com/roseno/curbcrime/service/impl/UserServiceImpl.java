@@ -3,7 +3,9 @@ package com.roseno.curbcrime.service.impl;
 import com.roseno.curbcrime.domain.User;
 import com.roseno.curbcrime.dto.user.*;
 import com.roseno.curbcrime.exception.ServiceException;
-import com.roseno.curbcrime.mapper.UserMapper;
+import com.roseno.curbcrime.exception.NotFoundException;
+import com.roseno.curbcrime.model.Role;
+import com.roseno.curbcrime.repository.UserRepository;
 import com.roseno.curbcrime.service.UserService;
 import com.roseno.curbcrime.util.EmailSender;
 import com.roseno.curbcrime.util.UniqueKeyGenerator;
@@ -12,7 +14,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -21,7 +25,7 @@ public class UserServiceImpl implements UserService {
     private static final int USER_ID_LENGTH = 8;
     private static final int USER_CIPHER_LENGTH = 6;
 
-    private final UserMapper userMapper;
+    private final UserRepository userRepository;
     private final EmailSender mailSender;
     private final PasswordEncoder passwordEncoder;
 
@@ -31,29 +35,19 @@ public class UserServiceImpl implements UserService {
      * @return      회원정보
      */
     @Override
-    public Optional<UserInfoResponse> findUser(long idx) {
-        try {
-            UserInfoResponse userResponse = null;
+    @Transactional(readOnly = true)
+    public UserInfoResponse findUser(long idx) {
+        User user = userRepository.findById(idx)
+                .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
 
-            Optional<User> optUser = userMapper.findUserByIdx(idx);
-
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-
-                userResponse = UserInfoResponse.builder()
-                        .idx(user.getIdx())
-                        .id(user.getId())
-                        .name(user.getName())
-                        .email(user.getEmail())
-                        .role(user.getRole())
-                        .createAt(user.getCreateAt())
-                        .build();
-            }
-
-            return Optional.ofNullable(userResponse);
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-        }
+        return UserInfoResponse.builder()
+                .idx(user.getIdx())
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .createAt(user.getCreateAt())
+                .build();
     }
 
     /**
@@ -62,28 +56,18 @@ public class UserServiceImpl implements UserService {
      * @return                      아이디 정보
      */
     @Override
-    public Optional<UserFindIdResponse> findUserId(UserFindIdRequest userFindIdRequest) {
+    @Transactional(readOnly = true)
+    public UserFindIdResponse findUserId(UserFindIdRequest userFindIdRequest) {
         String name = userFindIdRequest.getName();
         String email = userFindIdRequest.getEmail();
 
-        try {
-            UserFindIdResponse userResponse = null;
+        User user = userRepository.findByNameAndEmailAndIsDeletedFalse(name, email)
+                .orElseThrow(() -> new NotFoundException("가입하신 정보와 일치하지 않습니다. 다시 확인해주세요."));
 
-            Optional<User> optUser = userMapper.findIdByNameAndEmail(name, email);
-
-            if (optUser.isPresent()) {
-                User user = optUser.get();
-
-                userResponse = UserFindIdResponse.builder()
-                        .id(user.getId())
-                        .createAt(user.getCreateAt())
-                        .build();
-            }
-
-            return Optional.ofNullable(userResponse);
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-        }
+        return UserFindIdResponse.builder()
+                .id(user.getId())
+                .createAt(user.getCreateAt())
+                .build();
     }
 
     /**
@@ -92,12 +76,9 @@ public class UserServiceImpl implements UserService {
      * @return      아이디 사용 여부
      */
     @Override
+    @Transactional(readOnly = true)
     public boolean isUsedId(String id) {
-        try {
-            return userMapper.isUsedId(id);
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-        }
+        return userRepository.existsById(id);
     }
 
     /**
@@ -107,21 +88,15 @@ public class UserServiceImpl implements UserService {
      * @return                      비밀번호 일치 여부
      */
     @Override
+    @Transactional(readOnly = true)
     public boolean isUsedPassword(long idx, UserPasswordRequest userPasswordRequest) {
-        try {
-            Optional<String> optPassword = userMapper.findPasswordByIdx(idx);
+        User user = userRepository.findById(idx)
+                .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
 
-            if (optPassword.isPresent()) {
-                String currentPassword = optPassword.get();
-                String inputPassword = userPasswordRequest.getPassword();
+        String currentPassword = user.getPassword();
+        String inputPassword = userPasswordRequest.getPassword();
 
-                return passwordEncoder.matches(inputPassword, currentPassword);
-            }
-
-            return false;
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-        }
+        return passwordEncoder.matches(inputPassword, currentPassword);
     }
 
     /**
@@ -130,19 +105,24 @@ public class UserServiceImpl implements UserService {
      * @return                  회원가입 여부
      */
     @Override
-    public Optional<Long> createUser(UserJoinRequest userJoinRequest) {
+    public Optional<UserInfoResponse> createUser(UserJoinRequest userJoinRequest) {
         User user = User.builder()
                 .idx(generateUserIdx())
                 .id(userJoinRequest.getId())
                 .password(passwordEncoder.encode(userJoinRequest.getPassword()))
                 .name(userJoinRequest.getName())
                 .email(userJoinRequest.getEmail())
+                .role(Role.USER.id())
                 .build();
 
         try {
-            int result = userMapper.createUser(user);
+            User savedUser = userRepository.save(user);
 
-            return (result > 0) ? Optional.of(user.getIdx()) : Optional.empty();
+            UserInfoResponse userResponse = UserInfoResponse.builder()
+                    .idx(savedUser.getIdx())
+                    .build();
+
+            return Optional.ofNullable(userResponse);
         } catch (DataAccessException e) {
             throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
         }
@@ -151,84 +131,72 @@ public class UserServiceImpl implements UserService {
     /**
      * 비밀번호 인증번호 생성
      * @param userFindPasswordRequest   비밀번호 찾기 정보
-     * @return
+     * @return                          비밀번호 인증번호
      */
     @Override
-    public Optional<String> createPasswordCipher(UserFindPasswordRequest userFindPasswordRequest) {
+    @Transactional(readOnly = true)
+    public String createPasswordCipher(UserFindPasswordRequest userFindPasswordRequest) {
         String id = userFindPasswordRequest.getId();
         String email = userFindPasswordRequest.getEmail();
 
+        userRepository.findByIdAndEmailAndIsDeletedFalse(id, email)
+                .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
+
+        String cipher = UniqueKeyGenerator.generate(USER_CIPHER_LENGTH);
+
         try {
-            String cipher = null;
+            String subject = "[CurbCrime] 비밀번호 찾기 시, 사용되는 인증번호 발송 이메일입니다.";
+            String content = "인증번호는 " + cipher + " 입니다.";
 
-            Optional<User> optUser = userMapper.findUserByIdAndEmail(id, email);
+            mailSender.send(email, subject, content);
 
-            if (optUser.isPresent()) {
-                cipher = UniqueKeyGenerator.generate(USER_CIPHER_LENGTH);
-
-                String subject = "[CurbCrime] 비밀번호 찾기 시, 사용되는 인증번호 발송 이메일입니다.";
-                String content = "인증번호는 " + cipher + " 입니다.";
-
-                mailSender.send(email, subject, content);
-            }
-
-            return Optional.ofNullable(cipher);
+            return cipher;
         } catch (MailException e) {
             throw new ServiceException("이메일 전송 실패에 하였습니다.나중에 다시 시도해주세요.");
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
         }
     }
 
     /**
-     * 회원정보 변경
+     * 회원정보 변경 
      * @param idx               회원번호
      * @param userInfoRequest   회원정보
-     * @return                  회원정보 변경 여부
      */
     @Override
-    public boolean updateUser(long idx, UserInfoRequest userInfoRequest) {
-        User user = User.builder()
-                .name(userInfoRequest.getName())
-                .email(userInfoRequest.getEmail())
-                .build();
+    @Transactional
+    public void updateUser(long idx, UserInfoRequest userInfoRequest) {
+        User user = userRepository.findById(idx)
+                .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
 
-        try {
-            return userMapper.updateUser(idx, user) > 0;
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-        }
+        user.setName(userInfoRequest.getName());
+        user.setEmail(userInfoRequest.getEmail());
     }
 
     /**
      * 비밀번호 변경
      * @param idx                   회원번호
      * @param userPasswordRequest   비밀번호
-     * @return                      비밀번호 변경 여부
      */
     @Override
-    public boolean updatePassword(long idx, UserPasswordRequest userPasswordRequest) {
-        String password = passwordEncoder.encode(userPasswordRequest.getPassword());
+    @Transactional
+    public void updatePassword(long idx, UserPasswordRequest userPasswordRequest) {
+        User user = userRepository.findById(idx)
+                .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
 
-        try {
-            return userMapper.updatePassword(idx, password) > 0;
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-        }
+        user.setPassword(passwordEncoder.encode(userPasswordRequest.getPassword()));
     }
 
     /**
      * 회원 삭제
      * @param idx   회원번호
-     * @return      회원 삭제 여부
      */
     @Override
-    public boolean deleteUser(long idx) {
-        try {
-            return userMapper.deleteUser(idx) > 0;
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-        }
+    @Transactional
+    public void deleteUser(long idx) {
+        User user = userRepository.findById(idx)
+                .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
+
+        user.setDeleted(true);
+        user.setDeleteAt(LocalDateTime.now());
     }
 
     /**
@@ -240,7 +208,7 @@ public class UserServiceImpl implements UserService {
 
         do {
             id = UniqueKeyGenerator.generateNumeric(USER_ID_LENGTH);
-        } while(userMapper.isUsedIdx(id));
+        } while(userRepository.existsById(id));
 
         return id;
     }
