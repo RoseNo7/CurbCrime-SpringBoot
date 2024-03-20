@@ -69,7 +69,7 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     @Transactional(readOnly = true)
     public NoticeResponse findNotice(long id) {
-        Notice notice = noticeRepository.findById(id)
+        Notice notice = noticeRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("공지사항을 조회할 수 없습니다."));
 
         NoticeResponse.NoticeResponseBuilder builder = NoticeResponse.builder();
@@ -133,7 +133,7 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     @Transactional
     public void updateNotice(long id, NoticeRequest noticeRequest) {
-        Notice notice = noticeRepository.findById(id)
+        Notice notice = noticeRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("공지사항을 찾을 수 없습니다."));
 
         notice.setTitle(noticeRequest.getTitle());
@@ -147,7 +147,7 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     @Transactional
     public void incrementNoticeView(long id) {
-        if (noticeRepository.existsById(id)) {
+        if (noticeRepository.existsByIdAndIsDeletedFalse(id)) {
             noticeRepository.increaseViewCount(id);
         } else {
             throw new NotFoundException("공지사항을 찾을 수 없습니다.");
@@ -161,7 +161,7 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     @Transactional
     public void deleteNotice(long id) {
-        Notice notice = noticeRepository.findById(id)
+        Notice notice = noticeRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("공지사항을 찾을 수 없습니다."));
 
         notice.setDeleted(true);

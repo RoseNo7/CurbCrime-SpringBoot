@@ -37,7 +37,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserInfoResponse findUser(long idx) {
-        User user = userRepository.findById(idx)
+        User user = userRepository.findByIdxAndIsDeletedFalse(idx)
                 .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
 
         return UserInfoResponse.builder()
@@ -90,7 +90,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public boolean isUsedPassword(long idx, UserPasswordRequest userPasswordRequest) {
-        User user = userRepository.findById(idx)
+        User user = userRepository.findByIdxAndIsDeletedFalse(idx)
                 .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
 
         String currentPassword = user.getPassword();
@@ -164,7 +164,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateUser(long idx, UserInfoRequest userInfoRequest) {
-        User user = userRepository.findById(idx)
+        User user = userRepository.findByIdxAndIsDeletedFalse(idx)
                 .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
 
         user.setName(userInfoRequest.getName());
@@ -179,7 +179,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updatePassword(long idx, UserPasswordRequest userPasswordRequest) {
-        User user = userRepository.findById(idx)
+        User user = userRepository.findByIdxAndIsDeletedFalse(idx)
                 .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
 
         user.setPassword(passwordEncoder.encode(userPasswordRequest.getPassword()));
@@ -192,7 +192,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(long idx) {
-        User user = userRepository.findById(idx)
+        User user = userRepository.findByIdxAndIsDeletedFalse(idx)
                 .orElseThrow(() -> new NotFoundException("회원을 찾을 수 없습니다."));
 
         user.setDeleted(true);
