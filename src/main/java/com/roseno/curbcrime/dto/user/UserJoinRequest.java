@@ -2,8 +2,8 @@ package com.roseno.curbcrime.dto.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -18,7 +18,7 @@ public class UserJoinRequest {
     private String id;
 
     @NotBlank
-    @Size(min = 6, max = 20)
+    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*?_]).{6,20}$")
     private String password;
 
     @NotBlank

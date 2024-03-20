@@ -31,9 +31,9 @@ public class UserController {
     public ResponseEntity<ApiResponse<Object>> addUser(@RequestBody @Valid UserJoinRequest userJoinRequest) {
         ApiResponse<Object> apiResponse;
 
-        Optional<Long> optIdx = userService.createUser(userJoinRequest);
+        Optional<UserInfoResponse> optUser = userService.createUser(userJoinRequest);
 
-        if (optIdx.isPresent()) {
+        if (optUser.isPresent()) {
              apiResponse = ApiResponse.builder()
                     .code(HttpStatus.OK.value())
                     .status(ApiResult.SUCCESS.status())
@@ -56,22 +56,22 @@ public class UserController {
      * @return
      */
     @RequestMapping(method = RequestMethod.GET, value = "/accounts/{id}/exists")
-    public ResponseEntity<ApiResponse<Object>> isUsedId (@PathVariable String id) {
+    public ResponseEntity<ApiResponse<Object>> isUsedId(@PathVariable String id) {
         ApiResponse<Object> apiResponse;
 
         boolean isUsed = userService.isUsedId(id);
 
-        if (!isUsed) {
-            apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .message("사용 가능한 아이디입니다.")
-                    .build();
-        } else {
+        if (isUsed) {
             apiResponse = ApiResponse.builder()
                     .code(HttpStatus.OK.value())
                     .status(ApiResult.FAILED.status())
                     .message("이미 사용중인 아이디입니다.")
+                    .build();
+        } else {
+            apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .status(ApiResult.SUCCESS.status())
+                    .message("사용 가능한 아이디입니다.")
                     .build();
         }
         
@@ -85,25 +85,13 @@ public class UserController {
      */
     @RequestMapping(method = RequestMethod.POST, value = "/accounts/id")
     public ResponseEntity<ApiResponse<Object>> findUserId(@RequestBody @Valid UserFindIdRequest userFindIdRequest) {
-        ApiResponse<Object> apiResponse;
+        UserFindIdResponse userResponse = userService.findUserId(userFindIdRequest);
 
-        Optional<UserFindIdResponse> optUser = userService.findUserId(userFindIdRequest);
-
-        if (optUser.isPresent()) {
-            UserFindIdResponse userResponse = optUser.get();
-
-            apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .data(userResponse)
-                    .build();
-        } else {
-            apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("가입하신 정보와 일치하지 않습니다. 다시 확인해주세요.")
-                    .build();
-        }
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .data(userResponse)
+                .build();
 
         return ResponseEntity.ok(apiResponse);
     }
@@ -115,27 +103,14 @@ public class UserController {
      */
     @RequestMapping(method = RequestMethod.POST, value = "/accounts/password/create")
     public ResponseEntity<ApiResponse<Object>> createPasswordCipher(@RequestBody @Valid UserFindPasswordRequest userFindPasswordRequest) {
-        ApiResponse<Object> apiResponse;
+        String cipher = userService.createPasswordCipher(userFindPasswordRequest);
+        SessionUtil.setPasswordCipher(cipher);
 
-        Optional<String> optCipher = userService.createPasswordCipher(userFindPasswordRequest);
-
-        if (optCipher.isPresent()) {
-            String cipher = optCipher.get();
-
-            SessionUtil.setPasswordCipher(cipher);
-
-            apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .message("인증번호가 발급되었습니다.")
-                    .build();
-        } else {
-            apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.NOT_FOUND.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("회원을 찾을 수 없습니다.")
-                    .build();
-        }
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .message("인증번호가 발급되었습니다.")
+                .build();
 
         return ResponseEntity.ok(apiResponse);
     }
@@ -187,33 +162,17 @@ public class UserController {
      */
     @RequestMapping(method = RequestMethod.GET, value = "/my-account")
     public ResponseEntity<ApiResponse<Object>> getMyInfo() {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
-        Optional<UserInfoResponse> optUser = Optional.empty();
+        long idx = SessionUtil.getCurrentUserIdx().orElse(-1L);
 
-        if (optIdx.isPresent()) {
-            long idx = optIdx.get();
-            optUser = userService.findUser(idx);
-        }
+        UserInfoResponse userResponse = userService.findUser(idx);
 
-        if (optUser.isPresent()) {
-            UserInfoResponse userResponse = optUser.get();
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .data(userResponse)
+                .build();
 
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .data(userResponse)
-                    .build();
-
-            return ResponseEntity.ok(apiResponse);
-        } else {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.NOT_FOUND.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("회원을 찾을 수 없습니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
-        }
+        return ResponseEntity.ok(apiResponse);
     }
 
     /**
@@ -223,32 +182,19 @@ public class UserController {
      */
     @RequestMapping(method = RequestMethod.PATCH, value = "/my-account")
     public ResponseEntity<ApiResponse<Object>> modifyMyInfo(@RequestBody @Valid UserInfoRequest userInfoRequest) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
-        boolean isUpdated = false;
+        long idx = SessionUtil.getCurrentUserIdx().orElse(-1L);
 
-        if (optIdx.isPresent()) {
-            long idx = optIdx.get();
-            isUpdated = userService.updateUser(idx, userInfoRequest);
-        }
+        userService.updateUser(idx, userInfoRequest);
 
-        if (isUpdated) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .message("회원정보가 변경되었습니다.")
-                    .build();
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .message("회원정보가 변경되었습니다.")
+                .build();
 
-            return ResponseEntity.ok(apiResponse);
-        } else {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.NOT_FOUND.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("회원을 찾을 수 없습니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
-        }
+        return ResponseEntity.ok(apiResponse);
     }
+
 
     /**
      * 나의 비밀번호 확인
@@ -257,15 +203,10 @@ public class UserController {
      */
     @RequestMapping(method = RequestMethod.POST, value = "/my-account/password")
     public ResponseEntity<ApiResponse<Object>> isUsedPassword(@RequestBody UserPasswordRequest userPasswordRequest) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
-        boolean isUsed = false;
-
-        if (optIdx.isPresent()) {
-            long idx = optIdx.get();
-            isUsed = userService.isUsedPassword(idx, userPasswordRequest);
-        }
-
         ApiResponse<Object> apiResponse;
+
+        long idx = SessionUtil.getCurrentUserIdx().orElse(-1L);
+        boolean isUsed = userService.isUsedPassword(idx, userPasswordRequest);
 
         if (isUsed) {
             apiResponse = ApiResponse.builder()
@@ -291,31 +232,17 @@ public class UserController {
      */
     @RequestMapping(method = RequestMethod.PATCH, value = "/my-account/password")
     public ResponseEntity<ApiResponse<Object>> updateMyPassword(@RequestBody @Valid UserPasswordRequest userPasswordRequest) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
-        boolean isUpdated = false;
+        long idx = SessionUtil.getCurrentUserIdx().orElse(-1L);
 
-        if (optIdx.isPresent()) {
-            long idx = optIdx.get();
-            isUpdated = userService.updatePassword(idx, userPasswordRequest);
-        }
+        userService.updatePassword(idx, userPasswordRequest);
 
-        if (isUpdated) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .message("비밀번호가 변경되었습니다.")
-                    .build();
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .message("비밀번호가 변경되었습니다.")
+                .build();
 
-            return ResponseEntity.ok(apiResponse);
-        } else {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.NOT_FOUND.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("회원을 찾을 수 없습니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
-        }
+        return ResponseEntity.ok(apiResponse);
     }
 
     /**
@@ -325,32 +252,17 @@ public class UserController {
     @RequestMapping(method = RequestMethod.DELETE, value="/my-account")
     public ResponseEntity<ApiResponse<Object>> deleteMyAccount(HttpServletRequest request,
                                                                HttpServletResponse response) {
-        Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
-        boolean isDeleted = false;
+        long idx = SessionUtil.getCurrentUserIdx().orElse(-1L);
 
-        if (optIdx.isPresent()) {
-            long idx = optIdx.get();
-            isDeleted = userService.deleteUser(idx);
-        }
+        userService.deleteUser(idx);
+        SessionUtil.logout(request, response);
 
-        if (isDeleted) {
-            SessionUtil.logout(request, response);
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .message("회원탈퇴가 완료되었습니다.")
+                .build();
 
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .message("회원탈퇴가 완료되었습니다.")
-                    .build();
-
-            return ResponseEntity.ok(apiResponse);
-        } else {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.NOT_FOUND.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("회원을 찾을 수 없습니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
-        }
+        return ResponseEntity.ok(apiResponse);
     }
 }

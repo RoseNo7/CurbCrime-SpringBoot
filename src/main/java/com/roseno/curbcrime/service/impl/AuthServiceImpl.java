@@ -2,8 +2,8 @@ package com.roseno.curbcrime.service.impl;
 
 import com.roseno.curbcrime.domain.User;
 import com.roseno.curbcrime.dto.auth.AuthRequest;
-import com.roseno.curbcrime.mapper.AuthMapper;
 import com.roseno.curbcrime.model.Principal;
+import com.roseno.curbcrime.repository.AuthRepository;
 import com.roseno.curbcrime.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,8 +26,7 @@ import java.util.Collections;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService, UserDetailsService {
-
-    private final AuthMapper authMapper;
+    private final AuthRepository authRepository;
     private final AuthenticationManagerBuilder managerBuilder;
     private final SecurityContextRepository contextRepository;
 
@@ -63,7 +62,7 @@ public class AuthServiceImpl implements AuthService, UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = authMapper.findUserById(username);
+        User user = authRepository.findById(username);
 
         if (user == null) {
             throw new BadCredentialsException("");

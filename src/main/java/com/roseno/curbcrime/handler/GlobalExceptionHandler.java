@@ -2,6 +2,7 @@ package com.roseno.curbcrime.handler;
 
 import com.roseno.curbcrime.dto.api.ApiErrorResponse;
 import com.roseno.curbcrime.dto.api.ApiResult;
+import com.roseno.curbcrime.exception.NotFoundException;
 import com.roseno.curbcrime.exception.ServiceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -66,5 +67,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiErrorResponse);
+    }
+
+    /**
+     * Not Found Exception
+     * @param ex
+     * @return
+     */
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFoundException(NotFoundException ex) {
+        ApiErrorResponse apiErrorResponse = ApiErrorResponse.builder()
+                .code(HttpStatus.NOT_FOUND.value())
+                .status(ApiResult.FAILED.status())
+                .message(ex.getMessage())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiErrorResponse);
     }
 }
