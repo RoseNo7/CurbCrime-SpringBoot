@@ -12,6 +12,9 @@ your email host : 이메일 서비스 제공업체
 your email port : 이메일 서버 포트
 your email : 이메일
 your email password : 이메일 비밀번호
+
+# JPA 설정
+your database dialect : Database Dialect
 ```
 
 <br><br>
