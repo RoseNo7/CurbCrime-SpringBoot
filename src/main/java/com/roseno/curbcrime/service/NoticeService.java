@@ -12,12 +12,12 @@ public interface NoticeService {
     String SORT_OPTION_VIEW = "VIEW";                               // 조회수순
 
     PageResponse findNotices(int page, int count, String orderOption, String searchOption, String keyword);     // 공지사항 목록 조회
-    Optional<NoticeResponse> findNotice(long id);                                                               // 공지사항 조회
+    NoticeResponse findNotice(long id);                                                                         // 공지사항 조회
 
-    Optional<Long> createNotice(long idx, NoticeRequest noticeRequest);         // 공지사항 생성
+    Optional<NoticeResponse> createNotice(long idx, NoticeRequest noticeRequest);         // 공지사항 생성
 
-    boolean updateNotice(long id, NoticeRequest noticeRequest);                 // 공지사항 수정
-    boolean incrementNoticeView(long id);                                       // 공지사항 조회수 증가
+    void updateNotice(long id, NoticeRequest noticeRequest);                 // 공지사항 수정
+    void incrementNoticeView(long id);                                       // 공지사항 조회수 증가
 
-    boolean deleteNotice(long id);              // 공지사항 삭제
+    void deleteNotice(long id);              // 공지사항 삭제
 }

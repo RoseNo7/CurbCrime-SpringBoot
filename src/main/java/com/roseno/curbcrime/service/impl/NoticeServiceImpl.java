@@ -1,16 +1,25 @@
 package com.roseno.curbcrime.service.impl;
 
 import com.roseno.curbcrime.domain.Notice;
+import com.roseno.curbcrime.domain.User;
 import com.roseno.curbcrime.dto.notice.*;
+import com.roseno.curbcrime.exception.NotFoundException;
 import com.roseno.curbcrime.exception.ServiceException;
-import com.roseno.curbcrime.mapper.NoticeMapper;
+import com.roseno.curbcrime.repository.NoticeRepository;
 import com.roseno.curbcrime.service.NoticeService;
+import com.roseno.curbcrime.specification.NoticeSpecification;
 import com.roseno.curbcrime.util.UniqueKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -18,7 +27,7 @@ import java.util.Optional;
 public class NoticeServiceImpl implements NoticeService {
     private static final int NOTICE_ID_LENGTH = 8;
 
-    private final NoticeMapper noticeMapper;
+    private final NoticeRepository noticeRepository;
 
     /**
      * 공지사항 목록 조회
@@ -29,44 +38,27 @@ public class NoticeServiceImpl implements NoticeService {
      * @param keyword           검색어
      * @return                  공지사항 목록
      */
+    @Transactional(readOnly = true)
     public PageResponse findNotices(int page,
                                     int count,
                                     String sortOption,
                                     String searchOption,
                                     String keyword) {
-        try {
-            int offset = (page - 1) * count;
-            int limit = count;
-            int totalCount = noticeMapper.findNoticeCount(searchOption, keyword);
-            sortOption = toSortColumn(sortOption);
+        int pageNumber = page - 1;
+        Sort sort = toSortColumn(sortOption);                                                       // 정렬
+        Specification<Notice> spec = NoticeSpecification.bySearchOption(searchOption, keyword);     // 검색
+        Pageable pageable = PageRequest.of(pageNumber, count, sort);                                // 페이징
+        Page<Notice> pagination = noticeRepository.findAll(spec, pageable);
 
-            List<Notice> notices = noticeMapper.findNotices(offset, limit, sortOption, searchOption, keyword);
-            List<NoticesResponse> noticesResponses = notices.stream()
-                    .map(notice -> NoticesResponse.builder()
-                            .id(notice.getId())
-                            .title(notice.getTitle())
-                            .viewCount(notice.getViewCount())
-                            .createAt(notice.getCreateAt())
-                            .updateAt(notice.getUpdateAt())
-                            .user(UserResponse.builder()
-                                    .idx(notice.getUser().getIdx())
-                                    .id(notice.getUser().getId())
-                                    .role(notice.getUser().getRole())
-                                    .build())
-                            .build()
-                    )
-                    .toList();
-
-            return PageResponse.builder()
-                    .page(page)
-                    .count(count)
-                    .totalCount(totalCount)
-                    .notices(noticesResponses)
-                    .build();
-
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-        }
+        return PageResponse.builder()
+                .page(page)
+                .count(pagination.getContent().size())
+                .totalCount((int) pagination.getTotalElements())
+                .notices(pagination.getContent().stream()
+                        .map(this::mapToNoticesResponse)
+                        .toList()
+                )
+                .build();
     }
 
     /**
@@ -75,34 +67,31 @@ public class NoticeServiceImpl implements NoticeService {
      * @return      공지사항
      */
     @Override
-    public Optional<NoticeResponse> findNotice(long id) {
-        try {
-            NoticeResponse noticeResponse = null;
+    @Transactional(readOnly = true)
+    public NoticeResponse findNotice(long id) {
+        Notice notice = noticeRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new NotFoundException("공지사항을 조회할 수 없습니다."));
 
-            Optional<Notice> optNotice = noticeMapper.findNoticeById(id);
+        NoticeResponse.NoticeResponseBuilder builder = NoticeResponse.builder();
+        builder.id(notice.getId());
+        builder.title(notice.getTitle());
+        builder.content(notice.getContent());
+        builder.viewCount(notice.getViewCount());
+        builder.createAt(notice.getCreateAt());
+        builder.updateAt(notice.getUpdateAt());
 
-            if (optNotice.isPresent()) {
-                Notice notice = optNotice.get();
+        User user = notice.getUser();
+        if (user != null) {
+            UserResponse userResponse = UserResponse.builder()
+                    .idx(user.getIdx())
+                    .id(user.getId())
+                    .role(user.getRole())
+                    .build();
 
-                noticeResponse = NoticeResponse.builder()
-                        .id(notice.getId())
-                        .title(notice.getTitle())
-                        .content(notice.getContent())
-                        .createAt(notice.getCreateAt())
-                        .updateAt(notice.getUpdateAt())
-                        .user(UserResponse.builder()
-                                .idx(notice.getUser().getIdx())
-                                .id(notice.getUser().getId())
-                                .role(notice.getUser().getRole())
-                                .build()
-                        )
-                        .build();
-            }
-
-            return Optional.ofNullable(noticeResponse);
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+            builder.user(userResponse);
         }
+
+        return builder.build();
     }
 
     /**
@@ -112,18 +101,25 @@ public class NoticeServiceImpl implements NoticeService {
      * @return                  공지사항 아이디
      */
     @Override
-    public Optional<Long> createNotice(long userIdx, NoticeRequest noticeRequest) {
+    public Optional<NoticeResponse> createNotice(long userIdx, NoticeRequest noticeRequest) {
         Notice notice = Notice.builder()
                 .id(generateNoticeId())
-                .userIdx(userIdx)
                 .title(noticeRequest.getTitle())
                 .content(noticeRequest.getContent())
+                .user(User.builder()
+                        .idx(userIdx)
+                        .build()
+                )
                 .build();
 
         try {
-            int result = noticeMapper.createNotice(notice);
+            Notice savedNotice = noticeRepository.save(notice);
 
-            return (result > 0) ? Optional.of(notice.getId()) : Optional.empty();
+            NoticeResponse noticeResponse = NoticeResponse.builder()
+                    .id(savedNotice.getId())
+                    .build();
+
+            return Optional.ofNullable(noticeResponse);
         } catch (DataAccessException e) {
             throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
         }
@@ -133,48 +129,70 @@ public class NoticeServiceImpl implements NoticeService {
      * 공지사항 수정
      * @param id                공지사항 아이디
      * @param noticeRequest     공지사항
-     * @return                  공지사항 수정 여부
      */
     @Override
-    public boolean updateNotice(long id, NoticeRequest noticeRequest) {
-        Notice notice = Notice.builder()
-                .title(noticeRequest.getTitle())
-                .content(noticeRequest.getContent())
-                .build();
+    @Transactional
+    public void updateNotice(long id, NoticeRequest noticeRequest) {
+        Notice notice = noticeRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new NotFoundException("공지사항을 찾을 수 없습니다."));
 
-        try {
-            return noticeMapper.updateNotice(id, notice) > 0;
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
-        }
+        notice.setTitle(noticeRequest.getTitle());
+        notice.setContent(noticeRequest.getContent());
     }
 
     /**
      * 공지사항 조회수 증가
      * @param id        공지사항 아이디
-     * @return          공지사항 조회수 증가 여부
      */
     @Override
-    public boolean incrementNoticeView(long id) {
-        try {
-            return noticeMapper.incrementNoticeView(id) > 0;
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+    @Transactional
+    public void incrementNoticeView(long id) {
+        if (noticeRepository.existsByIdAndIsDeletedFalse(id)) {
+            noticeRepository.increaseViewCount(id);
+        } else {
+            throw new NotFoundException("공지사항을 찾을 수 없습니다.");
         }
     }
 
     /**
      * 공지사항 삭제
      * @param id    공지사항 아이디
-     * @return      공지사항 삭제 여부
      */
     @Override
-    public boolean deleteNotice(long id) {
-        try {
-            return noticeMapper.deleteNotice(id) > 0;
-        } catch (DataAccessException e) {
-            throw new ServiceException("요청을 처리하는 동안 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+    @Transactional
+    public void deleteNotice(long id) {
+        Notice notice = noticeRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new NotFoundException("공지사항을 찾을 수 없습니다."));
+
+        notice.setDeleted(true);
+        notice.setDeleteAt(LocalDateTime.now());
+    }
+
+    /**
+     * 공지사항 응답 객체로 변경
+     * @param notice    공지사항
+     * @return          공지사항 응답 객체
+     */
+    public NoticesResponse mapToNoticesResponse(Notice notice) {
+        NoticesResponse.NoticesResponseBuilder builder = NoticesResponse.builder();
+        builder.id(notice.getId());
+        builder.title(notice.getTitle());
+        builder.viewCount(notice.getViewCount());
+        builder.createAt(notice.getCreateAt());
+        builder.updateAt(notice.getUpdateAt());
+
+        User user = notice.getUser();
+        if (user != null) {
+            UserResponse userResponse = UserResponse.builder()
+                    .idx(user.getIdx())
+                    .id(user.getId())
+                    .role(user.getRole())
+                    .build();
+
+            builder.user(userResponse);
         }
+
+        return builder.build();
     }
 
     /**
@@ -182,11 +200,11 @@ public class NoticeServiceImpl implements NoticeService {
      * @param sortOption    정렬 옵션
      * @return              정렬 컬럼
      */
-    public String toSortColumn(String sortOption) {
+    public Sort toSortColumn(String sortOption) {
         return switch (sortOption) {
-            case SORT_OPTION_LATEST -> "create_at DESC";
-            case SORT_OPTION_VIEW -> "view_count DESC, create_at DESC";
-            default -> "create_at DESC";
+            case SORT_OPTION_LATEST -> Sort.by(Sort.Direction.DESC, "createAt");
+            case SORT_OPTION_VIEW -> Sort.by(Sort.Direction.DESC, "viewCount", "createAt");
+            default -> Sort.by(Sort.Direction.DESC, "createAt");
         };
     }
 
@@ -199,7 +217,7 @@ public class NoticeServiceImpl implements NoticeService {
 
         do {
             id = UniqueKeyGenerator.generateNumeric(NOTICE_ID_LENGTH);
-        } while(noticeMapper.isUsedId(id));
+        } while(noticeRepository.existsById(id));
 
         return id;
     }

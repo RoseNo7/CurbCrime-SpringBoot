@@ -58,27 +58,15 @@ public class NoticeController {
      */
     @RequestMapping(method = RequestMethod.GET, value = "/{id}")
     public ResponseEntity<ApiResponse<Object>> getNotice(@PathVariable long id) {
-        Optional<NoticeResponse> optNotice = noticeService.findNotice(id);
+        NoticeResponse noticeResponse = noticeService.findNotice(id);
 
-        if (optNotice.isPresent()) {
-            NoticeResponse noticeResponse = optNotice.get();
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .data(noticeResponse)
+                .build();
 
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .data(noticeResponse)
-                    .build();
-
-            return ResponseEntity.ok().body(apiResponse);
-        } else {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.NOT_FOUND.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("공지사항을 조회할 수 없습니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
-        }
+        return ResponseEntity.ok().body(apiResponse);
     }
 
     /**
@@ -89,16 +77,13 @@ public class NoticeController {
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(method = RequestMethod.POST, value = "")
     public ResponseEntity<ApiResponse<Object>> addNotice(@RequestBody @Valid NoticeRequest noticeRequest) {
-         Optional<Long> optIdx = SessionUtil.getCurrentUserIdx();
-         Optional<Long> optNoticeId = Optional.empty();
+         Long idx = SessionUtil.getCurrentUserIdx().orElse(-1L);
+         
+         Optional<NoticeResponse> optNotice = noticeService.createNotice(idx, noticeRequest);
 
-         if (optIdx.isPresent()) {
-             long idx = optIdx.get();
-             optNoticeId = noticeService.createNotice(idx, noticeRequest);
-         }
-
-         if (optNoticeId.isPresent()) {
-             long noticeId = optNoticeId.get();
+         if (optNotice.isPresent()) {
+             NoticeResponse noticeResponse = optNotice.get();
+             long noticeId = noticeResponse.getId();
 
              URI location = ServletUriComponentsBuilder.fromCurrentRequestUri()
                      .path("/{id}")
@@ -133,25 +118,15 @@ public class NoticeController {
     @RequestMapping(method = RequestMethod.PATCH, value = "/{id}")
     public ResponseEntity<ApiResponse<Object>> modifyNotice(@PathVariable long id,
                                                             @RequestBody @Valid NoticeRequest noticeRequest) {
-        boolean isUpdated = noticeService.updateNotice(id, noticeRequest);
+        noticeService.updateNotice(id, noticeRequest);
 
-        if (isUpdated) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .message("공지사항이 변경되었습니다.")
-                    .build();
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .message("공지사항이 변경되었습니다.")
+                .build();
 
-            return ResponseEntity.ok(apiResponse);
-        } else {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.NOT_FOUND.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("공지사항을 찾을 수 없습니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
-        }
+        return ResponseEntity.ok(apiResponse);
     }
 
     /**
@@ -162,25 +137,15 @@ public class NoticeController {
     @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(method = RequestMethod.DELETE, value = "/{id}")
     public ResponseEntity<ApiResponse<Object>> removeNotice(@PathVariable long id) {
-        boolean isDeleted = noticeService.deleteNotice(id);
+        noticeService.deleteNotice(id);
 
-        if (isDeleted) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .message("공지사항이 삭제되었습니다.")
-                    .build();
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .message("공지사항이 삭제되었습니다.")
+                .build();
 
-            return ResponseEntity.ok(apiResponse);
-        } else {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.NOT_FOUND.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("공지사항을 찾을 수 없습니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
-        }
+        return ResponseEntity.ok(apiResponse);
     }
 
     /**
@@ -190,23 +155,13 @@ public class NoticeController {
      */
     @RequestMapping(method = RequestMethod.POST, value = "/{id}/views")
     public ResponseEntity<ApiResponse<Object>> incrementNoticeViews(@PathVariable long id) {
-        boolean isIncreased = noticeService.incrementNoticeView(id);
+        noticeService.incrementNoticeView(id);
 
-        if (isIncreased) {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.OK.value())
-                    .status(ApiResult.SUCCESS.status())
-                    .build();
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .status(ApiResult.SUCCESS.status())
+                .build();
 
-            return ResponseEntity.ok(apiResponse);
-        } else {
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
-                    .code(HttpStatus.NOT_FOUND.value())
-                    .status(ApiResult.FAILED.status())
-                    .message("공지사항을 찾을 수 없습니다.")
-                    .build();
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
-        }
+        return ResponseEntity.ok(apiResponse);
     }
 }
