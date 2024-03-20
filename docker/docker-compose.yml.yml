@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+    mariadb:
+        image: mariadb:11
+        container_name: mariadb
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: test1234
+            MYSQL_DATABASE: curbcrime
+            MYSQL_USER: testuser
+            MYSQL_PASSWORD: test1234
+        volumes:
+            - ./table.sql:/docker-entrypoint-initdb.d/table.sql
+
+    app:
+        image: openjdk:17-jdk-slim
+        working_dir: /app
+        container_name: curbcrime
+        ports:
+            - "80:8080"
+        environment:
+            SPRING_PROFILES_ACTIVE: dev
+            SPRING_DATASOURCE_URL: jdbc:mysql://mariadb:3306/curbcrime?serverTimezone=UTC&characterEncoding=UTF-8
+            SPRING_DATASOURCE_USERNAME: testuser
+            SPRING_DATASOURCE_PASSWORD: test1234
+            SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MariaDBDialect
+        volumes:
+            - ./curbcrime.jar:/app/curbcrime.jar
+        command: ["java", "-jar", "curbcrime.jar"]
+        depends_on:
+            - mariadb
